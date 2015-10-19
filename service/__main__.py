@@ -1,3 +1,9 @@
-from ConfigFinder import config
+from config_finder import cfg
 
-print("running {}".format(config.get('message'))
+
+def main():
+    print("running {}".format(cfg('message')))
+
+
+if __name__ == "__main__":
+      main()

@@ -19,13 +19,15 @@ RUN apk del postgresql-dev \
     && rm -rf /var/cache/apk/* \
     && rm -rf /var/lib/postgresql/data
 
-# create a working directory
+# set up for configurability
+RUN mkdir /secret
+
+# install deps# create a working directory
 RUN mkdir /herd-api
 WORKDIR /herd-api
 
 # add the api
-ENV message='default message from Dockerfile'
 ADD service /herd-api/service
-ADD ConfigFinder /herd-api/ConfigFinder
+ADD tests /hserd-api/tests
 
 CMD python3 service
