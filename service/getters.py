@@ -1,34 +1,52 @@
+from uuid import uuid4
+
 from service.db import get_cursor
 
 
-def get_iteration(iteration_id=None, commit_hash=None):
-    """ Return an iteration """
-    cursor = get_cursor()
-    if iteration_id:
-        cursor.execute(
-            "SELECT * FROM iteration WHERE iteration_id={}".format(
-                iteration_id,
-            ),
-        )
-    elif commit_hash:
-        cursor.execute(
-            "SELECT * FROM iteration WHERE commit_hash={}".format(
-                commit_hash,
-            ),
-        )
-    else:
-        raise LookupError(
-            "Please provide either an iteration_id or commit_hash")
+def make_getter(table_name, key, values='*'):
+    """ return a getter that looks for values in a table by a key """
 
-    row = cursor.fetchone()
-    cursor.close()
+    default = uuid4()
+    def getter(__val__=default, **kwargs):
+        """
+        return the values in the key passed to the factory
 
-    return {
-        "iteration_id": row[0],
-        "commit_uri": row[1],
-        "branch_id": row[2],
-        "commit_hash": row[3],
-        "image_name": row[4],
-        "image_uri": row[5],
-        "time_committed": row[6],
-    }
+        a single keyword argument may be passed to specify an alternate key
+
+        >>> getter(x)
+        # looks for key=x where key was passed to make_getter
+
+        >>> getter(myKey=y)
+        # looks for myKey=y
+
+        """
+
+        # we need either a single kwarg telling us the key(override) and the value
+        if len(kwargs) == 1:
+            __key__ = list(kwargs.keys())[0]
+            __val__ = kwargs[__key__]
+        # or we need to be passed a value for this getter's default key
+        else:
+            if __val__ == default:
+                raise LookupError("please provide a value to look for")
+            __key__ = key
+
+        sql_template = "SELECT {values} FROM {table_name} WHERE {key}=%s"
+        sql = sql_template.format(
+            table_name=table_name,
+            values=values,
+            key=__key__,
+        )
+        cursor = get_cursor()
+        cursor.execute(sql, (__val__))
+        row_dict = dict(zip(cursor.description(), cursor.fetchone()))
+        cursor.close()
+        return row_dict
+
+    getter.__name__ = "{}_{}_getter".format(table_name, key)
+    return getter
+
+
+get_iteration = make_getter("iteration", "iteration_id")
+get_config = make_getter("config", "config_id")
+get_env = make_getter("environment", "environment_id")
