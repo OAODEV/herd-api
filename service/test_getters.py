@@ -2,7 +2,7 @@ import datetime
 import unittest
 from unittest.mock import patch
 
-from service.getters import (
+from getters import (
     get_iteration,
     make_getter,
     get_config,
@@ -13,7 +13,7 @@ class GettersTestCase(unittest.TestCase):
     """ functions that get objects """
 
     def setUp(self):
-        get_cursor_patcher = patch('service.getters.get_cursor')
+        get_cursor_patcher = patch('getters.get_cursor')
         self.mock_get_cur = get_cursor_patcher.start()
 
     def tearDown(self):
@@ -45,7 +45,7 @@ class GettersTestCase(unittest.TestCase):
         self.mock_get_cur.return_value.close.assert_called_once_with()
 
     def test_get_iteration_by_commit_hash(self):
-        """ shoule return an iteration when given a commit hash """
+        """ Should return an iteration when given a commit hash """
         # set up
         now = datetime.datetime.now().ctime(),
         self.mock_get_cur.return_value.description.return_value = (

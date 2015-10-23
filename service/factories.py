@@ -1,5 +1,5 @@
-from service.db import get_cursor
-from service.getters import (
+from db import get_cursor
+from getters import (
     get_env,
     get_config,
 )
@@ -135,18 +135,18 @@ def new_env(based_on_id=None):
 idem_make_service = idem_maker(
     'service',
     'service_id',
-    ['service_name']
+    ['service_name'],
 )
 idem_make_feature = idem_maker(
     'feature',
     'feature_id',
-    ['feature_name', 'service_id']
+    ['feature_name', 'service_id'],
 )
 idem_make_branch = idem_maker(
     'branch',
     'branch_id',
     ['branch_name', 'feature_id'],
-    new_deployment_pipeline
+    new_deployment_pipeline,
 )
 idem_make_iteration = idem_maker(
     'iteration',

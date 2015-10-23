@@ -10,7 +10,9 @@ RUN apk update && \
       python3 \
       python3-dev
 RUN pip3 install --upgrade pip && \
-    pip3 install psycopg2
+    pip3 install bottle \
+                 psycopg2
+
 
 # clean up from instalation
 RUN rm -rf ~/.pip/cache/*
@@ -22,7 +24,7 @@ RUN apk del postgresql-dev \
 # set up for configurability
 RUN mkdir /secret
 
-# install deps# create a working directory
+# create a working directory
 RUN mkdir /herd-api
 WORKDIR /herd-api
 

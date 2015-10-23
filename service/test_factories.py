@@ -5,11 +5,11 @@ from unittest.mock import (
     PropertyMock,
 )
 
-from service.getters import (
+from getters import (
     get_config,
     get_env,
 )
-from service.factories import (
+from factories import (
     idem_make_service,
     idem_make_feature,
     idem_make_branch,
@@ -23,7 +23,7 @@ class FactoryTestCase(unittest.TestCase):
     """ factories might create objects and relationships based on new info """
 
     def setUp(self):
-        get_cursor_patcher = patch('service.factories.get_cursor')
+        get_cursor_patcher = patch('factories.get_cursor')
         self.mock_get_cur = get_cursor_patcher.start()
         self.mock_lastrowid = PropertyMock(return_value=199)
         type(self.mock_get_cur.return_value).lastrowid = self.mock_lastrowid
@@ -116,7 +116,7 @@ class FactoryTestCase(unittest.TestCase):
         """ Should make a branch with a pipeline if it doesn't already exist """
         # set up
         new_deployment_pipeline_patcher = patch(
-            'service.factories.new_deployment_pipeline')
+            'factories.new_deployment_pipeline')
         mock_new_deployment_pipeline = new_deployment_pipeline_patcher.start()
 
         # run SUT
@@ -209,12 +209,12 @@ class FactoryTestCase(unittest.TestCase):
         """ Should make a new deployment pipeline """
         # set up
         new_config_patcher = patch(
-            'service.factories.new_config',
+            'factories.new_config',
             return_value=5,
         )
         mock_new_config = new_config_patcher.start()
 
-        new_env_patcher = patch('service.factories.new_env', return_value=9)
+        new_env_patcher = patch('factories.new_env', return_value=9)
         mock_new_env = new_env_patcher.start()
 
         # run SUT passing branch_id: 1, copy_config_id: 6, copy_env_id: None
@@ -255,7 +255,7 @@ class FactoryTestCase(unittest.TestCase):
         """ Should make a new config based on an old one """
         # set up
         get_config_patcher = patch(
-            'service.factories.get_config',
+            'factories.get_config',
             return_value = {
                 'config_id': 101,
                 'key_value_pairs': "mockKey=mockVal",
@@ -293,7 +293,7 @@ class FactoryTestCase(unittest.TestCase):
         """ Should make a new env based on an old one """
         # set up
         get_env_patcher = patch(
-            'service.factories.get_env',
+            'factories.get_env',
             return_value = {
                 'environment_id': 101,
                 'settings': "mockKey=mockVal",

@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from service.db import get_cursor
+from db import get_cursor
 
 
 def make_getter(table_name, key, values='*'):

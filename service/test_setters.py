@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from service.setters import set_iteration
+from setters import set_iteration
 
 
 class SettersTestCase(unittest.TestCase):
@@ -9,7 +9,7 @@ class SettersTestCase(unittest.TestCase):
 
     def setUp(self):
         self.patchers = []
-        get_cursor_patcher = patch('service.setters.get_cursor')
+        get_cursor_patcher = patch('setters.get_cursor')
         self.patchers.append(get_cursor_patcher)
         self.mock_get_cur = get_cursor_patcher.start()
 

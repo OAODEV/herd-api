@@ -1,4 +1,4 @@
-from service.db import get_cursor
+from db import get_cursor
 
 
 def set_iteration(iteration_id, updates):

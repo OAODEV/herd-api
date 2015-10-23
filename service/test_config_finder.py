@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from .config_finder import cfg
+from config_finder import cfg
 
 class TestConfigValueFinder(unittest.TestCase):
 

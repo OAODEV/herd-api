@@ -1,12 +1,12 @@
-from service.factories import (
+from factories import (
     idem_make_service,
     idem_make_feature,
     idem_make_branch,
     idem_make_iteration,
 )
 
-from service.getters import get_iteration
-from service.setters import set_iteration
+from getters import get_iteration
+from setters import set_iteration
 
 
 def handle_branch_commit(repo_name,
@@ -23,12 +23,21 @@ def handle_branch_commit(repo_name,
 
     """
 
+    print(
+        "handling branch commit ({}, {}, {}, {})".format(
+            repo_name,
+            feature_name,
+            branch_name,
+            commit_hash,
+        )
+    )
+
     service_id = idem_make_service(repo_name)
     feature_id = idem_make_feature(feature_name, service_id)
     branch_id = idem_make_branch(branch_name, feature_id)
     iteration_id = idem_make_iteration(commit_hash, branch_id)
 
-    return iteration_id
+    return get_iteration(iteration_id)
 
 def handle_build(commit_hash, image_name):
     """ ensure the api represents that the image was built from the commit """
