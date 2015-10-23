@@ -30,6 +30,5 @@ WORKDIR /herd-api
 
 # add the api
 ADD service /herd-api/service
-ADD tests /hserd-api/tests
 
 CMD python3 service
