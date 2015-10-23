@@ -20,4 +20,4 @@ bottle.route(build_path, ["GET"], handle_build)
 
 debug = cfg('debug', "false") == "true"
 print("running herd api, debug? {}".format(debug))
-bottle.run(host='0.0.0.0', port='8000', debug=True)
+bottle.run(host='0.0.0.0', port='8000', debug=debug)
