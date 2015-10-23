@@ -124,7 +124,7 @@ class FactoryTestCase(unittest.TestCase):
 
         # confirm that reasonable sql was executed
         self.mock_get_cur.return_value.execute.assert_any_call(
-            "SELECT branch_id FROM branch WHERE (branch_name=%s, feature_id=%s)",
+            "SELECT branch_id FROM branch WHERE branch_name=%s AND feature_id=%s",
             ('mock-branch-name', 1),
         )
         self.mock_get_cur.return_value.execute.assert_any_call(

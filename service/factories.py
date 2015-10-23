@@ -39,9 +39,9 @@ def idem_maker(table_name, pk, keys, on_create_callback=lambda x: None):
         # check if the object is already in the database
         cursor = get_cursor()
         # string for the WHERE clause key=%s, key2=%s ...
-        matches = ', '.join(["{}=%s".format(k) for k in __keys__])
+        matches = ' AND '.join(["{}=%s".format(k) for k in __keys__])
         cursor.execute(
-            "SELECT {pk} FROM {table_name} WHERE ({matches})".format(
+            "SELECT {pk} FROM {table_name} WHERE {matches}".format(
                 pk=pk,
                 table_name=table_name,
                 matches=matches,
