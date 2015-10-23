@@ -1,6 +1,9 @@
 import datetime
 import unittest
-from unittest.mock import patch
+from unittest.mock import (
+    patch,
+    PropertyMock,
+)
 
 from getters import (
     get_iteration,
@@ -25,9 +28,8 @@ class GettersTestCase(unittest.TestCase):
 
         # set up
         now = datetime.datetime.now().ctime(),
-        self.mock_get_cur.return_value.description.return_value = (
-            "iteration_id",
-        )
+        mock_description = PropertyMock(return_value=(("iteration_id",),))
+        type(self.mock_get_cur.return_value).description = mock_description
         self.mock_get_cur.return_value.fetchone.return_value = (122,)
 
         # run SUT
@@ -48,9 +50,8 @@ class GettersTestCase(unittest.TestCase):
         """ Should return an iteration when given a commit hash """
         # set up
         now = datetime.datetime.now().ctime(),
-        self.mock_get_cur.return_value.description.return_value = (
-            "iteration_id",
-        )
+        mock_description = PropertyMock(return_value=(("iteration_id",),))
+        type(self.mock_get_cur.return_value).description = mock_description
         self.mock_get_cur.return_value.fetchone.return_value = (123,)
 
         # run SUT
@@ -72,11 +73,14 @@ class GettersTestCase(unittest.TestCase):
     def test_get_config(self):
         """ Should return a config given an id """
         # set up
-        self.mock_get_cur.return_value.description.return_value = (
-            'config_id',
-            'config_name',
-            'key_value_pairs',
+        mock_description = PropertyMock(
+            return_value=(
+                ('config_id',),
+                ('config_name',),
+                ('key_value_pairs',),
+            )
         )
+        type(self.mock_get_cur.return_value).description = mock_description
         self.mock_get_cur.return_value.fetchone.return_value = (
             1,
             'mock-config-name',
@@ -105,11 +109,14 @@ class GettersTestCase(unittest.TestCase):
     def test_get_env(self):
         """ Should return an environment given and id """
         # set up
-        self.mock_get_cur.return_value.description.return_value = (
-            "environment_id",
-            "environment_name",
-            "settings",
+        mock_description = PropertyMock(
+            return_value=(
+                ("environment_id",),
+                ("environment_name",),
+                ("settings",),
+            )
         )
+        type(self.mock_get_cur.return_value).description = mock_description
         self.mock_get_cur.return_value.fetchone.return_value = (
             2,
             'mock-env-name',
@@ -143,11 +150,15 @@ class GettersTestCase(unittest.TestCase):
             1,
             2,
         )
-        self.mock_get_cur.return_value.description.return_value = (
-            "zero",
-            "one",
-            "two",
+        description_prop = PropertyMock(
+            return_value=(
+                ("zero",),
+                ("one",),
+                ("two",),
+            )
         )
+
+        type(self.mock_get_cur.return_value).description = description_prop
 
         # run SUT
         getter = make_getter("mock_table", "mock_key", "(mock, values)")

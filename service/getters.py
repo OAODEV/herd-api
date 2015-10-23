@@ -1,7 +1,7 @@
 from uuid import uuid4
 
 from db import get_cursor
-
+import lense
 
 def make_getter(table_name, key, values='*'):
     """ return a getter that looks for values in a table by a key """
@@ -39,13 +39,12 @@ def make_getter(table_name, key, values='*'):
         )
         cursor = get_cursor()
         cursor.execute(sql, (__val__))
-        row_dict = dict(zip(cursor.description(), cursor.fetchone()))
+        row_dict = dict(zip(lense.fst(cursor.description), cursor.fetchone()))
         cursor.close()
         return row_dict
 
     getter.__name__ = "{}_{}_getter".format(table_name, key)
     return getter
-
 
 get_iteration = make_getter("iteration", "iteration_id")
 get_config = make_getter("config", "config_id")

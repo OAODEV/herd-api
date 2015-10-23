@@ -25,10 +25,10 @@ RUN apk del postgresql-dev \
 RUN mkdir /secret
 
 # create a working directory
-RUN mkdir /herd-api
-WORKDIR /herd-api
+RUN mkdir /herd
+WORKDIR /herd
 
 # add the api
-ADD service /herd-api/service
+ADD service /herd/service
 
-CMD python3 service
+CMD python3 -u service

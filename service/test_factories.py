@@ -73,7 +73,6 @@ class FactoryTestCase(unittest.TestCase):
         # and ended up with the corect id
         self.assertEqual(service_id, 10)
 
-
         # make sure we closed the cursor
         self.mock_get_cur.return_value.close.assert_called_once_with()
 
