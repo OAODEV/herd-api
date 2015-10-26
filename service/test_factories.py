@@ -172,10 +172,12 @@ class FactoryTestCase(unittest.TestCase):
     def test_idem_make_iteration_new_case(self):
         """ Should make a iteration """
         # run SUT
-        iteration_id = idem_make_iteration(3, 'abc123')
+        iteration_id = idem_make_iteration('abc123', 3)
 
         # confirm that reasonable sql was executed only once
         self.mock_get_cur.return_value.execute.assert_any_call(
+            # branch_id appears first because we need to stort the keys to get
+            # the orderig to be consistant.
             "INSERT INTO iteration (branch_id, commit_hash) VALUES (%s, %s)",
             (3, 'abc123')
         )

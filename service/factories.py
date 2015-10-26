@@ -153,5 +153,5 @@ idem_make_branch = idem_maker(
 idem_make_iteration = idem_maker(
     'iteration',
     'iteration_id',
-    ['branch_id', 'commit_hash'],
+    ['commit_hash', 'branch_id'],
 )
