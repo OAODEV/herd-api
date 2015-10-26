@@ -7,7 +7,7 @@ import psycopg2.extensions
 
 
 class PoliteCursor(psycopg2.extensions.cursor):
-    def execute(self, sql, args):
+    def execute(self, sql, args=None):
         try:
             print("executing sql ({}) with args ({})".format(sql, args))
             psycopg2.extensions.cursor.execute(self, sql, args)

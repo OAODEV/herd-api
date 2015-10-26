@@ -110,7 +110,7 @@ def new_config(based_on_id=None):
     cursor = get_cursor()
     cursor.execute(
         "INSERT INTO config (key_value_pairs) VALUES (%s)",
-        (key_value_pairs_text),
+        (key_value_pairs_text,),
     )
     config_id = cursor.lastrowid
     cursor.close()
@@ -127,7 +127,7 @@ def new_env(based_on_id=None):
     cursor = get_cursor()
     cursor.execute(
         "INSERT INTO environment (settings) VALUES (%s)",
-        (settings_value),
+        (settings_value,),
     )
     env_id = cursor.lastrowid
     cursor.close()

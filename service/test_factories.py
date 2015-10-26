@@ -133,11 +133,11 @@ class FactoryTestCase(unittest.TestCase):
 
         self.mock_get_cur.return_value.execute.assert_any_call(
             "INSERT INTO config (key_value_pairs) VALUES (%s)",
-            '',
+            ('',),
         )
         self.mock_get_cur.return_value.execute.assert_any_call(
             "INSERT INTO environment (settings) VALUES (%s)",
-            '',
+            ('',),
         )
         self.mock_get_cur.return_value.execute.assert_any_call(
             "INSERT INTO deployment_pipeline " + \
@@ -244,7 +244,7 @@ class FactoryTestCase(unittest.TestCase):
         # confirm appropriate sql was executed for an empty config
         self.mock_get_cur.return_value.execute.assert_called_once_with(
             "INSERT INTO config (key_value_pairs) VALUES (%s)",
-            (''),
+            ('',),
         )
 
         # confirm we have a reasonable id
@@ -268,7 +268,7 @@ class FactoryTestCase(unittest.TestCase):
         # confirm correct sql was executed once
         self.mock_get_cur.return_value.execute.assert_called_once_with(
             "INSERT INTO config (key_value_pairs) VALUES (%s)",
-            ('mockKey=mockVal')
+            ('mockKey=mockVal',)
         )
 
         # confirm that we got config 101
@@ -282,7 +282,7 @@ class FactoryTestCase(unittest.TestCase):
         # confirm correct sql
         self.mock_get_cur.return_value.execute.assert_called_once_with(
             "INSERT INTO environment (settings) VALUES (%s)",
-            (''),
+            ('',),
         )
 
         # confirm that we got a reasonable id
@@ -306,7 +306,7 @@ class FactoryTestCase(unittest.TestCase):
         # confirm correct sql was executed once
         self.mock_get_cur.return_value.execute.assert_called_once_with(
             "INSERT INTO environment (settings) VALUES (%s)",
-            ('mockKey=mockVal')
+            ('mockKey=mockVal',)
         )
 
         # confirm that we got environment 57
