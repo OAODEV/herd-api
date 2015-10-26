@@ -69,6 +69,7 @@ def idem_maker(table_name, pk, keys, on_create_callback=lambda x: None):
         cursor.close()
         return object_id
 
+    idem_maker.__name__ = "{}_{}_maker".format(table_name, pk)
     return idem_maker
 
 def new_deployment_pipeline(branch_id, copy_config_id=None, copy_env_id=None):
