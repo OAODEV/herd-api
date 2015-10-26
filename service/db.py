@@ -4,13 +4,6 @@ import psycopg2
 import psycopg2.extensions
 
 
-connection = psycopg2.connect(
-    host=cfg('pghost', None),
-    port=cfg('pgport', '5433'),
-    dbname=cfg('pgdatabase', 'herd'),
-    user=cfg('pguser', None),
-    password=cfg('pgpassword', None),
-)
 
 
 class PoliteCursor(psycopg2.extensions.cursor):
@@ -18,7 +11,7 @@ class PoliteCursor(psycopg2.extensions.cursor):
         try:
             print("executing sql ({}) with args ({})".format(sql, args))
             psycopg2.extensions.cursor.execute(self, sql, args)
-        except Exception e:
+        except Exception as e:
             print("Error executing sql, {}".format(e.message))
             self.close()
             self.connection.rollback()
@@ -28,6 +21,14 @@ class PoliteCursor(psycopg2.extensions.cursor):
         self.close()
         self.connection.commit()
 
-
-def get_cursor():
+connection = None
+def get_cursor(connection=connection):
+    if connection is None:
+        connection = psycopg2.connect(
+            host=cfg('pghost', None),
+            port=cfg('pgport', '5433'),
+            dbname=cfg('pgdatabase', 'herd'),
+            user=cfg('pguser', None),
+            password=cfg('pgpassword', None),
+        )
     return connection.cursor(cursor_factory=PoliteCursor)

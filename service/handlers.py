@@ -41,6 +41,7 @@ def handle_branch_commit(repo_name,
 
 def handle_build(commit_hash, image_name):
     """ ensure the api represents that the image was built from the commit """
+    print("handling build ({}, {})".format(commit_hash, image_name,))
     iteration = get_iteration(commit_hash=commit_hash)
     set_iteration(iteration['iteration_id'], {'image_name': image_name})
     return iteration
