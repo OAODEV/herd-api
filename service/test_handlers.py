@@ -60,7 +60,7 @@ class HandlersTestCase(unittest.TestCase):
         mock_get_iteration.assert_called_with('mock-iteration-id')
 
         # handler should have returned the iteration id
-        self.assertEqual(iteration_id, 1)
+        self.assertEqual(iteration_id, {'iteration_id': 1})
 
         # tear down
         patch.stopall()
