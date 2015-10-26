@@ -12,7 +12,7 @@ class PoliteCursor(psycopg2.extensions.cursor):
             print("executing sql ({}) with args ({})".format(sql, args))
             psycopg2.extensions.cursor.execute(self, sql, args)
         except Exception as e:
-            print("Error executing sql, {}".format(e.message))
+            print("Error executing sql, {}".format(e))
             self.close()
             self.connection.rollback()
             raise e
