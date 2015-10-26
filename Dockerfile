@@ -1,4 +1,5 @@
-from r.iadops.com/bottlebase:1
+FROM r.iadops.com/bottlebase:1
+MAINTAINER jesse.miller@adops.com
 
 # set up for configurability
 RUN mkdir /secret
