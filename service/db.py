@@ -18,7 +18,7 @@ class PoliteCursor(psycopg2.extensions.cursor):
             raise e
 
     def close(self):
-        self.close()
+        super().close()
         self.connection.commit()
 
 connection = None
