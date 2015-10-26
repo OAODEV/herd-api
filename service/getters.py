@@ -38,7 +38,7 @@ def make_getter(table_name, key, values='*'):
             key=__key__,
         )
         cursor = get_cursor()
-        cursor.execute(sql, (__val__))
+        cursor.execute(sql, (__val__,))
         row_dict = dict(zip(lense.fst(cursor.description), cursor.fetchone()))
         cursor.close()
         return row_dict
