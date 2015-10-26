@@ -64,6 +64,7 @@ def idem_maker(table_name, pk, keys, on_create_callback=lambda x: None):
                 tuple(__vals__),
             )
             object_id = cursor.lastrowid
+            cursor.connection.commit()
             on_create_callback(object_id)
 
         cursor.close()
