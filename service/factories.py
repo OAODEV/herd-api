@@ -50,6 +50,7 @@ def idem_maker(table_name, pk, keys, on_create_callback=lambda x: None):
         )
         if cursor.rowcount > 0:
             object_id = cursor.fetchone()[0]
+            cursor.close()
         else:
             # columns for the insert statement column, column2, colu...
             columns = ', '.join(__keys__)
@@ -64,10 +65,9 @@ def idem_maker(table_name, pk, keys, on_create_callback=lambda x: None):
                 tuple(__vals__),
             )
             object_id = cursor.lastrowid
-            cursor.connection.commit()
+            cursor.close()
             on_create_callback(object_id)
 
-        cursor.close()
         return object_id
 
     idem_maker.__name__ = "{}_{}_maker".format(table_name, pk)
