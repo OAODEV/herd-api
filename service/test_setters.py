@@ -5,7 +5,7 @@ from setters import set_iteration
 
 
 class SettersTestCase(unittest.TestCase):
-    """ Setters set fields on objects """
+    """ Setters set fields on objects (in the database) """
 
     def setUp(self):
         self.patchers = []
