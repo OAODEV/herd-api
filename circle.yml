@@ -9,7 +9,7 @@ machine:
 dependencies:
   override:
     - echo "The build name is in here!!!" r.iadops.com/$herd_service_name:$herd_build_tag
-    - curl http://104.197.109.161/commit/$CIRCLE_PROJECT_REPONAME/$CIRCLE_BRANCH/$CIRCLE_BRANCH/$CIRCLE_SHA1$
+    - curl http://104.197.109.161/commit/$CIRCLE_PROJECT_REPONAME/$CIRCLE_BRANCH/$CIRCLE_BRANCH/$CIRCLE_SHA1
     - docker login --username circleci --password $registry_password --email fake@fake.co r.iadops.com
     - docker info
     - docker build -t r.iadops.com/$herd_service_name:$herd_build_tag .
