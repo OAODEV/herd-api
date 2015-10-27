@@ -38,6 +38,9 @@ def make_getter(table_name, key, values='*'):
         )
         cursor = get_cursor()
         cursor.execute(sql, (__val__,))
+        if cursor.description is None:
+            cursor.close()
+            return {}
         row_dict = dict(
             zip([c[0] for c in cursor.description],
                 cursor.fetchone()
