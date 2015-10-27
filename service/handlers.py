@@ -33,15 +33,10 @@ def handle_branch_commit(repo_name,
     )
 
     service_id = idem_make_service(repo_name)
-    print("service_id = {}".format(service_id))
     feature_id = idem_make_feature(feature_name, service_id)
-    print("feature_id = {}".format(feature_id))
     branch_id = idem_make_branch(branch_name, feature_id)
-    print("branch_id = {}".format(branch_id))
     iteration_id = idem_make_iteration(commit_hash, branch_id)
-    print("iteration_id = {}".format(iteration_id))
     iteration = get_iteration(iteration_id)
-    return {'iteration_id': iteration['iteration_id']}
 
 def handle_build(commit_hash, image_name):
     """ ensure the api represents that the image was built from the commit """
