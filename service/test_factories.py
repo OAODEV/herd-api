@@ -25,13 +25,10 @@ class FactoryTestCase(unittest.TestCase):
     def setUp(self):
         get_cursor_patcher = patch('factories.get_cursor')
         self.mock_get_cur = get_cursor_patcher.start()
-        self.mock_lastrowid = PropertyMock(return_value=199)
-        type(self.mock_get_cur.return_value).lastrowid = self.mock_lastrowid
         self.mock_rowcount = PropertyMock(return_value=0)
         type(self.mock_get_cur.return_value).rowcount = self.mock_rowcount
 
     def tearDown(self):
-        del type(self.mock_get_cur.return_value).lastrowid
         del type(self.mock_get_cur.return_value).rowcount
         del self.mock_get_cur
         patch.stopall()
@@ -41,13 +38,14 @@ class FactoryTestCase(unittest.TestCase):
         # set up
         mock_rowcount = PropertyMock(return_value=0)
         type(self.mock_get_cur.return_value).rowcount = mock_rowcount
+        self.mock_get_cur.return_value.fetchone.return_value = (1,)
 
         # run SUT
         service_id = idem_make_service('mock-service-name')
 
         # confirm that reasonable sql was executed only once
         self.mock_get_cur.return_value.execute.assert_any_call(
-            "INSERT INTO service (service_name) VALUES (%s)",
+            "INSERT INTO service (service_name) VALUES (%s) RETURNING service_id",
             ('mock-service-name',),
         )
 
@@ -78,12 +76,19 @@ class FactoryTestCase(unittest.TestCase):
 
     def test_idem_make_feature_new_case(self):
         """ Should make a feature """
+        # set up
+        mock_rowcount = PropertyMock(return_value=0)
+        type(self.mock_get_cur.return_value).rowcount = mock_rowcount
+        self.mock_get_cur.return_value.fetchone.return_value = (1,)
+
         # run SUT
         feature_id_first = idem_make_feature('mock-feature-name', 1)
 
         # confirm that reasonable sql was executed only once
         self.mock_get_cur.return_value.execute.assert_any_call(
-            "INSERT INTO feature (feature_name, service_id) VALUES (%s, %s)",
+            "INSERT INTO feature (feature_name, service_id) " + \
+            "VALUES (%s, %s) " + \
+            "RETURNING feature_id",
             ('mock-feature-name', 1)
         )
 
@@ -117,6 +122,9 @@ class FactoryTestCase(unittest.TestCase):
         new_deployment_pipeline_patcher = patch(
             'factories.new_deployment_pipeline')
         mock_new_deployment_pipeline = new_deployment_pipeline_patcher.start()
+        mock_rowcount = PropertyMock(return_value=0)
+        type(self.mock_get_cur.return_value).rowcount = mock_rowcount
+        self.mock_get_cur.return_value.fetchone.return_value = (199,)
 
         # run SUT
         branch_id = idem_make_branch('mock-branch-name', 1)
@@ -127,21 +135,25 @@ class FactoryTestCase(unittest.TestCase):
             ('mock-branch-name', 1),
         )
         self.mock_get_cur.return_value.execute.assert_any_call(
-            "INSERT INTO branch (branch_name, feature_id) VALUES (%s, %s)",
+            "INSERT INTO branch (branch_name, feature_id) " + \
+            "VALUES (%s, %s) " + \
+            "RETURNING branch_id",
             ('mock-branch-name', 1),
         )
 
         self.mock_get_cur.return_value.execute.assert_any_call(
-            "INSERT INTO config (key_value_pairs) VALUES (%s)",
-            '',
+            "INSERT INTO config (key_value_pairs) VALUES (%s) RETURNING config_id",
+            ('',),
         )
         self.mock_get_cur.return_value.execute.assert_any_call(
-            "INSERT INTO environment (settings) VALUES (%s)",
-            '',
+            "INSERT INTO environment (settings) VALUES (%s) RETURNING environment_id",
+            ('',),
         )
         self.mock_get_cur.return_value.execute.assert_any_call(
             "INSERT INTO deployment_pipeline " + \
-            "(branch_id, config_id, environment_id) VALUES (%s, %s, %s)",
+            "(branch_id, config_id, environment_id) " \
+            "VALUES (%s, %s, %s) " + \
+            "RETURNING deployment_pipeline_id",
             (199, 199, 199),
         )
 
@@ -171,12 +183,21 @@ class FactoryTestCase(unittest.TestCase):
 
     def test_idem_make_iteration_new_case(self):
         """ Should make a iteration """
+        # set up
+        mock_rowcount = PropertyMock(return_value=0)
+        type(self.mock_get_cur.return_value).rowcount = mock_rowcount
+        self.mock_get_cur.return_value.fetchone.return_value = (1,)
+
         # run SUT
-        iteration_id = idem_make_iteration(3, 'abc123')
+        iteration_id = idem_make_iteration('abc123', 3)
 
         # confirm that reasonable sql was executed only once
         self.mock_get_cur.return_value.execute.assert_any_call(
-            "INSERT INTO iteration (branch_id, commit_hash) VALUES (%s, %s)",
+            # branch_id appears first because we need to stort the keys to get
+            # the orderig to be consistant.
+            "INSERT INTO iteration (branch_id, commit_hash) " + \
+            "VALUES (%s, %s) " + \
+            "RETURNING iteration_id",
             (3, 'abc123')
         )
 
@@ -229,7 +250,8 @@ class FactoryTestCase(unittest.TestCase):
         self.mock_get_cur.return_value.execute.assert_called_once_with(
             "INSERT INTO deployment_pipeline " + \
             "(branch_id, config_id, environment_id) " + \
-            "VALUES (%s, %s, %s)",
+            "VALUES (%s, %s, %s) " + \
+            "RETURNING deployment_pipeline_id",
             (1, 5, 9),
         )
 
@@ -238,13 +260,18 @@ class FactoryTestCase(unittest.TestCase):
 
     def test_new_empty_config(self):
         """ Should make a new empty config """
+        # set up
+        mock_rowcount = PropertyMock(return_value=0)
+        type(self.mock_get_cur.return_value).rowcount = mock_rowcount
+        self.mock_get_cur.return_value.fetchone.return_value = (1,)
+
         # run SUT
         new_config_id = new_config()
 
         # confirm appropriate sql was executed for an empty config
         self.mock_get_cur.return_value.execute.assert_called_once_with(
-            "INSERT INTO config (key_value_pairs) VALUES (%s)",
-            (''),
+            "INSERT INTO config (key_value_pairs) VALUES (%s) RETURNING config_id",
+            ('',),
         )
 
         # confirm we have a reasonable id
@@ -267,8 +294,8 @@ class FactoryTestCase(unittest.TestCase):
 
         # confirm correct sql was executed once
         self.mock_get_cur.return_value.execute.assert_called_once_with(
-            "INSERT INTO config (key_value_pairs) VALUES (%s)",
-            ('mockKey=mockVal')
+            "INSERT INTO config (key_value_pairs) VALUES (%s) RETURNING config_id",
+            ('mockKey=mockVal',)
         )
 
         # confirm that we got config 101
@@ -276,13 +303,18 @@ class FactoryTestCase(unittest.TestCase):
 
     def test_new_empty_env(self):
         """ Should make a new environment """
+        # set up
+        mock_rowcount = PropertyMock(return_value=0)
+        type(self.mock_get_cur.return_value).rowcount = mock_rowcount
+        self.mock_get_cur.return_value.fetchone.return_value = (1,)
+
         # run SUT
         new_env_id = new_env()
 
         # confirm correct sql
         self.mock_get_cur.return_value.execute.assert_called_once_with(
-            "INSERT INTO environment (settings) VALUES (%s)",
-            (''),
+            "INSERT INTO environment (settings) VALUES (%s) RETURNING environment_id",
+            ('',),
         )
 
         # confirm that we got a reasonable id
@@ -305,8 +337,8 @@ class FactoryTestCase(unittest.TestCase):
 
         # confirm correct sql was executed once
         self.mock_get_cur.return_value.execute.assert_called_once_with(
-            "INSERT INTO environment (settings) VALUES (%s)",
-            ('mockKey=mockVal')
+            "INSERT INTO environment (settings) VALUES (%s) RETURNING environment_id",
+            ('mockKey=mockVal',)
         )
 
         # confirm that we got environment 57

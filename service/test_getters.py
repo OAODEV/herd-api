@@ -38,7 +38,7 @@ class GettersTestCase(unittest.TestCase):
         # confirm that the cursor executed reasonable sql
         self.mock_get_cur.return_value.execute.assert_called_once_with(
             "SELECT * FROM iteration WHERE iteration_id=%s",
-            (122),
+            (122,),
         )
 
         self.assertEqual(iteration, {"iteration_id": 122})
@@ -60,7 +60,7 @@ class GettersTestCase(unittest.TestCase):
         # confirm that the cursor executed reasonable sql
         self.mock_get_cur.return_value.execute.assert_called_once_with(
             "SELECT * FROM iteration WHERE commit_hash=%s",
-            ('abc123'),
+            ('abc123',),
         )
 
         # confirm that the iteration returned is correct
@@ -93,7 +93,7 @@ class GettersTestCase(unittest.TestCase):
         # confirm we selected the given config
         self.mock_get_cur.return_value.execute.assert_called_once_with(
             "SELECT * FROM config WHERE config_id=%s",
-            1,
+            (1,),
         )
 
         # confirm the return is correct
@@ -129,7 +129,7 @@ class GettersTestCase(unittest.TestCase):
         # confirm we selected the given environment
         self.mock_get_cur.return_value.execute.assert_called_once_with(
             "SELECT * FROM environment WHERE environment_id=%s",
-            2,
+            (2,),
         )
 
         # confirm the return is correct
@@ -167,7 +167,7 @@ class GettersTestCase(unittest.TestCase):
         # cursor should have been called with the correct sql
         self.mock_get_cur.return_value.execute.assert_called_once_with(
             "SELECT (mock, values) FROM mock_table WHERE mock_key=%s",
-            ("mock val"),
+            ("mock val",),
         )
 
         # result should be built from fetchone and description
@@ -182,7 +182,7 @@ class GettersTestCase(unittest.TestCase):
         # that should be reflected in the sql
         self.mock_get_cur.return_value.execute.assert_called_with(
             "SELECT (mock, values) FROM mock_table WHERE alternate_key=%s",
-            ("some other value"),
+            ("some other value",),
         )
 
         # confirm that we closed the cursor whenever we got one

@@ -1,7 +1,6 @@
 from uuid import uuid4
 
 from db import get_cursor
-import lense
 
 def make_getter(table_name, key, values='*'):
     """ return a getter that looks for values in a table by a key """
@@ -38,8 +37,17 @@ def make_getter(table_name, key, values='*'):
             key=__key__,
         )
         cursor = get_cursor()
-        cursor.execute(sql, (__val__))
-        row_dict = dict(zip(lense.fst(cursor.description), cursor.fetchone()))
+        cursor.execute(sql, (__val__,))
+
+        if cursor.description is None:
+            cursor.close()
+            return {}
+
+        row_dict = dict(
+            zip([c[0] for c in cursor.description],
+                cursor.fetchone()
+               )
+        )
         cursor.close()
         return row_dict
 
