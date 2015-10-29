@@ -8,6 +8,10 @@ from factories import (
 from getters import get_iteration
 from setters import set_iteration
 
+from bottle import (
+    request,
+    abort,
+)
 
 def handle_branch_commit(repo_name,
                          feature_name,
