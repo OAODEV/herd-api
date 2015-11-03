@@ -19,5 +19,4 @@ def set_iteration(iteration_id, updates):
         "WHERE iteration_id=%s",
         tuple(sql_values),
     )
-    row = cursor.fetchone()
     cursor.close()

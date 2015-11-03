@@ -50,25 +50,31 @@ def idem_maker(table_name, pk, keys, on_create_callback=lambda x: None):
         )
         if cursor.rowcount > 0:
             object_id = cursor.fetchone()[0]
+            cursor.close()
         else:
             # columns for the insert statement column, column2, colu...
             columns = ', '.join(__keys__)
             # a %s for each pair %s, %s, %s...
             value_placeholders = ', '.join(['%s' for k in __keys__])
+            sql_template = "INSERT INTO {table_name} ({columns}) " + \
+                "VALUES ({vals}) " + \
+                "RETURNING {pk}"
             cursor.execute(
-                "INSERT INTO {table_name} ({columns}) VALUES ({vals})".format(
+                sql_template.format(
                     table_name=table_name,
                     columns=columns,
                     vals=value_placeholders,
+                    pk=pk,
                 ),
                 tuple(__vals__),
             )
-            object_id = cursor.lastrowid
+            object_id = cursor.fetchone()[0]
+            cursor.close()
             on_create_callback(object_id)
 
-        cursor.close()
         return object_id
 
+    idem_maker.__name__ = "{}_{}_maker".format(table_name, pk)
     return idem_maker
 
 def new_deployment_pipeline(branch_id, copy_config_id=None, copy_env_id=None):
@@ -91,10 +97,11 @@ def new_deployment_pipeline(branch_id, copy_config_id=None, copy_env_id=None):
     cursor.execute(
         "INSERT INTO deployment_pipeline " + \
         "(branch_id, config_id, environment_id) " + \
-        "VALUES (%s, %s, %s)",
+        "VALUES (%s, %s, %s) " + \
+        "RETURNING deployment_pipeline_id",
         (branch_id, config_id, env_id),
     )
-    deployment_pipeline_id = cursor.lastrowid
+    deployment_pipeline_id = cursor.fetchone()[0]
     cursor.close()
     return deployment_pipeline_id
 
@@ -108,10 +115,10 @@ def new_config(based_on_id=None):
 
     cursor = get_cursor()
     cursor.execute(
-        "INSERT INTO config (key_value_pairs) VALUES (%s)",
-        (key_value_pairs_text),
+        "INSERT INTO config (key_value_pairs) VALUES (%s) RETURNING config_id",
+        (key_value_pairs_text,),
     )
-    config_id = cursor.lastrowid
+    config_id = cursor.fetchone()[0]
     cursor.close()
     return config_id
 
@@ -125,10 +132,10 @@ def new_env(based_on_id=None):
 
     cursor = get_cursor()
     cursor.execute(
-        "INSERT INTO environment (settings) VALUES (%s)",
-        (settings_value),
+        "INSERT INTO environment (settings) VALUES (%s) RETURNING environment_id",
+        (settings_value,),
     )
-    env_id = cursor.lastrowid
+    env_id = cursor.fetchone()[0]
     cursor.close()
     return env_id
 
@@ -151,5 +158,5 @@ idem_make_branch = idem_maker(
 idem_make_iteration = idem_maker(
     'iteration',
     'iteration_id',
-    ['branch_id', 'commit_hash'],
+    ['commit_hash', 'branch_id'],
 )
