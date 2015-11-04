@@ -6,13 +6,12 @@ from bottle import (
 from config_finder import cfg
 
 def restricted(handler):
-    """ Only allow whitelisted access to handler """
+    """ Only allow CI token access to handler """
     def restricted_handler(*args, **kwargs):
         """ check the request for an authorized email then call the hander """
-        whitelist = cfg('whitelist', '').split(',')
         try:
-            auth_email = request.headers.get('X-Authenticated-Email')
-            assert auth_email in whitelist
+            auth_token = request.headers.get('X-Authenticated-Token')
+            assert auth_token == "CI"
         except:
             abort(401, "Not Authorized")
             return

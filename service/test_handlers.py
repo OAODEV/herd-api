@@ -34,15 +34,10 @@ class HandlersTestCase(unittest.TestCase):
             "handlers.idem_make_iteration",
             return_value="mock-iteration-id",
         )
-        get_iteration_patcher = patch(
-            "handlers.get_iteration",
-            return_value={"iteration_id": 1, "iteration_name": 'mock_iteration'},
-        )
         mock_make_service = make_service_patcher.start()
         mock_make_feature = make_feature_patcher.start()
         mock_make_branch = make_branch_patcher.start()
         mock_make_iteration = make_iteration_patcher.start()
-        mock_get_iteration = get_iteration_patcher.start()
 
         # run SUT
         iteration_id = handle_branch_commit(
@@ -57,10 +52,9 @@ class HandlersTestCase(unittest.TestCase):
         mock_make_feature.assert_called_with('feature-x', 'mock-service-id')
         mock_make_branch.assert_called_with('branch-x', 'mock-feature-id')
         mock_make_iteration.assert_called_with('aabbccdd11-x', 'mock-branch-id')
-        mock_get_iteration.assert_called_with('mock-iteration-id')
 
         # handler should have returned the iteration id
-        self.assertEqual(iteration_id, {'iteration_id': 1})
+        self.assertEqual(iteration_id, {'iteration_id': 'mock-iteration-id'})
 
         # tear down
         patch.stopall()
