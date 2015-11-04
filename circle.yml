@@ -5,7 +5,7 @@ machine:
     herd_service_name: herd-service
     herd_unittest_cmd: python3 -m unittest
     herd_build_tag: $(cat $CIRCLE_PROJECT_REPONAME/Version)_build.$(echo $CIRCLE_SHA1 | cut -c1-7)
-    ci_token_header: "X-CI-Token: $registry_password"
+    ci_token_header: X-CI-Token:$registry_password
 
 dependencies:
   override:
