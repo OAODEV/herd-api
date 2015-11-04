@@ -5,11 +5,12 @@ machine:
     herd_service_name: herd-service
     herd_unittest_cmd: python3 -m unittest
     herd_build_tag: $(cat $CIRCLE_PROJECT_REPONAME/Version)_build.$(echo $CIRCLE_SHA1 | cut -c1-7)
+    ci_token_header: "X-CI-Token: $registry_password"
 
 dependencies:
   override:
     - echo "The build name is in here!!!" r.iadops.com/$herd_service_name:$herd_build_tag
-    - curl --header "X-CI-Token: $registry_password" http://104.197.109.161/commit/$CIRCLE_PROJECT_REPONAME/$CIRCLE_BRANCH/$CIRCLE_BRANCH/$CIRCLE_SHA1
+    - curl --header $ci_token_header http://104.197.109.161/commit/$CIRCLE_PROJECT_REPONAME/$CIRCLE_BRANCH/$CIRCLE_BRANCH/$CIRCLE_SHA1
     - docker login --username circleci --password $registry_password --email fake@fake.co r.iadops.com
     - docker info
     - docker build -t r.iadops.com/$herd_service_name:$herd_build_tag .
@@ -23,4 +24,4 @@ deployment:
     branch: /.*/
     commands:
       - docker push r.iadops.com/$herd_service_name:$herd_build_tag
-      - curl --header "X-CI-Token: $registry_password" http://104.197.109.161/build/$CIRCLE_SHA1/r.iadops.com/$herd_service_name:$herd_build_tag
+      - curl --header $ci_token_header http://104.197.109.161/build/$CIRCLE_SHA1/r.iadops.com/$herd_service_name:$herd_build_tag
