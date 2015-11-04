@@ -23,4 +23,4 @@ deployment:
     branch: /.*/
     commands:
       - docker push r.iadops.com/$herd_service_name:$herd_build_tag
-      - curl --header $ci_token_header http://104.197.109.161/build/$CIRCLE_SHA1/r.iadops.com/$herd_service_name:$herd_build_tag
+      - curl --header X-CI-Token:$registry_password http://104.197.109.161/build/$CIRCLE_SHA1/r.iadops.com/$herd_service_name:$herd_build_tag
