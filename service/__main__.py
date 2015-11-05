@@ -7,6 +7,8 @@ from handlers import (
     handle_build,
 )
 
+from security import restricted
+
 commit_path = "/commit/<{}>/<{}>/<{}>/<{}>".format(
     "repo_name",
     "feature_name",
@@ -15,8 +17,8 @@ commit_path = "/commit/<{}>/<{}>/<{}>/<{}>".format(
 )
 build_path = "/build/<commit_hash>/<image_name:re:[^\/]+\/?[^\/]+>"
 
-bottle.route(commit_path, ["GET"], handle_branch_commit)
-bottle.route(build_path, ["GET"], handle_build)
+bottle.route(commit_path, ["GET"], restricted(handle_branch_commit))
+bottle.route(build_path, ["GET"], restricted(handle_build))
 
 debug = cfg('debug', "false") == "true"
 print("running herd api, debug? {}".format(debug))
