@@ -4,6 +4,7 @@ from unittest.mock import patch
 from handlers import (
     handle_branch_commit,
     handle_build,
+    release_in_automatic_pipelines,
 )
 
 
