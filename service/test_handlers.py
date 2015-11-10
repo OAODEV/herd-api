@@ -10,6 +10,30 @@ from handlers import (
 class HandlersTestCase(unittest.TestCase):
     """ test the web handlers """
 
+    def test_release_in_automatic_pipelines(self):
+        """
+        Ensure that all automatic pipelines for an iteration's branch is found
+        and that a release is created for each of them. Ensure that a release
+        is not created for non-automatic pipelines in the branch or for
+        any pipeline in another branch
+
+        """
+
+        # set up
+        # two branches
+        # a built iteration in one of the branches
+        # two automatic pipelines associated with the same branch
+        # a non-automatic pipeline associated with the same branch
+        # an automatic pipeline associated with the other branch
+
+        # run SUT
+        result = release_in_automatic_pipelines(123)
+
+        # Confirm that:
+        # both automatic pipelines in the same branch have releases
+        # the non-automatic pipeline does not have a release
+        # the autoatic pipeline for the other branch doesn't have a release
+
     def test_handle_branch_commit(self):
         """
         ensure that the branch handler generates all objects and
