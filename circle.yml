@@ -19,13 +19,13 @@ dependencies:
     - ~/google-cloud-sdk
     - ~/docker
   override:
+    # install gcloud
+    - if [ ! -d ~/google-cloud-sdk ]; then curl https://sdk.cloud.google.com | bash; fi
+    - sudo /home/ubuntu/google-cloud-sdk/bin/gcloud components update
+
     - echo "The build name is in here!!!" r.iadops.com/$herd_service_name:$herd_build_tag
     - curl --header X-CI-Token:$registry_password http://104.197.109.161/commit/$CIRCLE_PROJECT_REPONAME/$CIRCLE_BRANCH/$CIRCLE_BRANCH/$CIRCLE_SHA1?x
     - docker login --username circleci --password $registry_password --email fake@fake.co r.iadops.com
-
-    # install gcloud
-    - if [ ! -d ~/google-cloud-sdk ]; then curl https://sdk.cloud.google.com | bash; fi
-    - sudo gcloud components update
 
     # build and tag the image
     - if [[ -e ~/docker/image.tar ]]; then docker load -i ~/docker/image.tar; fi
