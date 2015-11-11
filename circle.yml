@@ -44,7 +44,7 @@ deployment:
     commands:
 #      - docker push r.iadops.com/$herd_service_name:$herd_build_tag
 
-      - echo $GCLOUD_KEY | base64 --decode > gcloud.json; gcloud auth activate-service-account $GCLOUD_EMAIL --key-file gcloud.json; ssh-keygen -f ~/.ssh/google_compute_engine -N ""
+      - echo $gcloud_key | base64 --decode > gcloud.json; gcloud auth activate-service-account $gcloud_email --key-file gcloud.json; ssh-keygen -f ~/.ssh/google_compute_engine -N ""
       - gcloud config list
       - gcloud docker push us.gcr.io/lexical-cider-93918/$herd_service_name:$herd_build_tag
 
