@@ -26,7 +26,7 @@ dependencies:
     - curl https://raw.githubusercontent.com/smerchek/docker-hello-google/master/script/ensure-gcloud-installed.sh | sh
     - if [[ -e ~/docker/image.tar ]]; then docker load -i ~/docker/image.tar; fi
 
-    - docker build -t r.iadops.com/$herd_service_name:$herd_build_tag .
+    - docker build r.iadops.com/$herd_service_name:$herd_build_tag .
     - docker tag -t us.gcr.io/lexical-cider-93918/$herd_service_name:$herd_build_tag r.iadops.com/$herd_service_name:$herd_build_tag
 
     - mkdir -p ~/docker; docker save us.gcr.io/lexical-cider-93918/$herd_service_name:$herd_build_tag > ~/docker/image.tar
