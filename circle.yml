@@ -25,6 +25,7 @@ dependencies:
 
     # install gcloud
     - if [ ! -d ~/google-cloud-sdk ]; then curl https://sdk.cloud.google.com | bash; fi
+    - gcloud components update
 
     # build and tag the image
     - if [[ -e ~/docker/image.tar ]]; then docker load -i ~/docker/image.tar; fi
