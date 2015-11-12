@@ -1,8 +1,6 @@
 machine:
   services:
     - docker
-  python:
-    version: 2.7.3
   environment:
     herd_service_name: herd-service
     herd_unittest_cmd: python3 -m unittest
@@ -16,11 +14,11 @@ machine:
 
 dependencies:
   cache_directories:
-    - ~/google-cloud-sdk
+#    - ~/google-cloud-sdk
     - ~/docker
   override:
     # install gcloud
-    - if [ ! -d ~/google-cloud-sdk ]; then curl https://sdk.cloud.google.com | bash; fi
+#    - if [ ! -d ~/google-cloud-sdk ]; then curl https://sdk.cloud.google.com | bash; fi
     - sudo /home/ubuntu/google-cloud-sdk/bin/gcloud components update
 
     - echo "The build name is in here!!!" r.iadops.com/$herd_service_name:$herd_build_tag
