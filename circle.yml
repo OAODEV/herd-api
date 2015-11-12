@@ -27,7 +27,7 @@ dependencies:
     # build and tag the image
     - if [[ -e ~/docker/image.tar ]]; then docker load -i ~/docker/image.tar; fi
     - docker build -t r.iadops.com/$herd_service_name:$herd_build_tag .
-    - docker tag r.iadops.com/$herd_service_name:$herd_build_tag us.gcr.io/lexical-cider-93918/$herd_service_name:$herd_build_tag
+    - docker tag -f r.iadops.com/$herd_service_name:$herd_build_tag us.gcr.io/lexical-cider-93918/$herd_service_name:$herd_build_tag
 
     # cache the image to speed up the next build
     - mkdir -p ~/docker; docker save us.gcr.io/lexical-cider-93918/$herd_service_name:$herd_build_tag > ~/docker/image.tar
@@ -43,7 +43,6 @@ deployment:
       - docker push r.iadops.com/$herd_service_name:$herd_build_tag
 
       - echo $gcloud_key | base64 --decode > gcloud.json; gcloud auth activate-service-account $gcloud_email --key-file gcloud.json; ssh-keygen -f ~/.ssh/google_compute_engine -N ""
-      - gcloud config list
       - gcloud docker push us.gcr.io/lexical-cider-93918/$herd_service_name:$herd_build_tag
 
       - curl --header X-CI-Token:$registry_password http://104.197.109.161/build/$CIRCLE_SHA1/us.gcr.io/lexical-cider-93918/$herd_service_name:$herd_build_tag
