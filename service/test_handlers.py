@@ -84,6 +84,9 @@ class HandlersTestCase(unittest.TestCase):
             'mock-iteration-id',
             {'image_name': 'mock-image-name'}
         )
+        mock_release_in_automatic_pipelines.assert_called_once_with(
+            'mock-iteration-id',
+        )
 
         # tear down
         mock_get_iteration.stop()

@@ -43,8 +43,16 @@ def handle_branch_commit(repo_name,
     return {'iteration_id': iteration_id}
 
 def handle_build(commit_hash, image_name):
-    """ ensure the api represents that the image was built from the commit """
+    """
+    ensure the api represents that the image was built from the commit
+
+    The iteration gets it's build name updated and releases are created
+    for the branch's automatic pipelines
+
+    """
+
     print("handling build ({}, {})".format(commit_hash, image_name,))
     iteration = get_iteration(commit_hash=commit_hash)
     set_iteration(iteration['iteration_id'], {'image_name': image_name})
+    release_in_automatic_pipelines(iteration['iteration_id'])
     return {'iteration_id': iteration['iteration_id']}
