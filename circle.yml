@@ -11,10 +11,10 @@ dependencies:
     - echo "The build name is in here!!!" r.iadops.com/$herd_service_name:$herd_build_tag
     - curl --header X-CI-Token:$registry_password http://104.197.109.161/commit/$CIRCLE_PROJECT_REPONAME/$CIRCLE_BRANCH/$CIRCLE_BRANCH/$CIRCLE_SHA1?x
     - docker login --username circleci --password $registry_password --email fake@fake.co r.iadops.com
-    - docker login -e 1234@5678.com -u _token -p $gcloud_access_token https://gcr.io
+#    - docker login -e 1234@5678.com -u _token -p $gcloud_access_token https://gcr.io
     - docker info
     - docker build -t r.iadops.com/$herd_service_name:$herd_build_tag .
-    - docker tag r.iadops.com/$herd_service_name:$herd_build_tag gcr.io/lexical-cider-93918/$herd_service_name:$herd_build_tag
+ #   - docker tag r.iadops.com/$herd_service_name:$herd_build_tag gcr.io/lexical-cider-93918/$herd_service_name:$herd_build_tag
 
 test:
   override:
@@ -25,5 +25,5 @@ deployment:
     branch: /.*/
     commands:
       - docker push r.iadops.com/$herd_service_name:$herd_build_tag
-      - docker push gcr.io/lexical-cider-93918/$herd_service_name:$herd_build_tag
+  #    - docker push gcr.io/lexical-cider-93918/$herd_service_name:$herd_build_tag
       - curl --header X-CI-Token:$registry_password http://104.197.109.161/build/$CIRCLE_SHA1/r.iadops.com/$herd_service_name:$herd_build_tag?x

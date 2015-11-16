@@ -3,6 +3,7 @@ from factories import (
     idem_make_feature,
     idem_make_branch,
     idem_make_iteration,
+    idem_release_in_automatic_pipelines,
 )
 
 from getters import get_iteration
@@ -54,5 +55,5 @@ def handle_build(commit_hash, image_name):
     print("handling build ({}, {})".format(commit_hash, image_name,))
     iteration = get_iteration(commit_hash=commit_hash)
     set_iteration(iteration['iteration_id'], {'image_name': image_name})
-    release_in_automatic_pipelines(iteration['iteration_id'])
+    idem_release_in_automatic_pipelines(iteration['iteration_id'])
     return {'iteration_id': iteration['iteration_id']}

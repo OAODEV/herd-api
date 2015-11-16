@@ -1,4 +1,4 @@
-FROM r.iadops.com/bottlebase:1
+FROM r.iadops.com/bottlebase:2
 MAINTAINER jesse.miller@adops.com
 
 # set up for configurability

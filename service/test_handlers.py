@@ -10,6 +10,13 @@ from handlers import (
 class HandlersTestCase(unittest.TestCase):
     """ test the web handlers """
 
+    def setUp(self):
+        get_cursor_patcher = patch('factories.get_cursor')
+        self.mock_get_cursor = get_cursor_patcher.start()
+
+    def tearDown(self):
+        patch.stopall()
+
     def test_handle_branch_commit(self):
         """
         ensure that the branch handler generates all objects and
@@ -56,9 +63,6 @@ class HandlersTestCase(unittest.TestCase):
         # handler should have returned the iteration id
         self.assertEqual(iteration_id, {'iteration_id': 'mock-iteration-id'})
 
-        # tear down
-        patch.stopall()
-
     def test_handle_build(self):
         """ ensure that the build handler updates the iteration """
         # set up
@@ -70,8 +74,12 @@ class HandlersTestCase(unittest.TestCase):
             'handlers.set_iteration',
             return_value = {'iteration_id': 'mock-iteration-id'},
         )
+        release_in_auto_pipes_patcher = patch(
+            "handlers.idem_release_in_automatic_pipelines",
+        )
         mock_get_iteration = get_iteration_patcher.start()
         mock_set_iteration = set_iteration_patcher.start()
+        mock_release_in_auto_pipes = release_in_auto_pipes_patcher.start()
 
         # run SUT
         result = handle_build('mock-commit-hash', 'mock-image-name')
@@ -84,13 +92,9 @@ class HandlersTestCase(unittest.TestCase):
             'mock-iteration-id',
             {'image_name': 'mock-image-name'}
         )
-        mock_release_in_automatic_pipelines.assert_called_once_with(
+        mock_release_in_auto_pipes.assert_called_once_with(
             'mock-iteration-id',
         )
-
-        # tear down
-        mock_get_iteration.stop()
-        mock_set_iteration.stop()
 
     def test_can_pass(self):
         self.assertTrue(True)

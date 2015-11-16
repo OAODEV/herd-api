@@ -1,10 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from setters import (
-    set_iteration,
-    release_in_automatic_pipelines,
-)
+from setters import set_iteration
 
 
 class SettersTestCase(unittest.TestCase):
@@ -20,36 +17,6 @@ class SettersTestCase(unittest.TestCase):
         del self.mock_get_cur
         for patcher in self.patchers:
             patcher.stop()
-
-    def test_release_automatic_pipelines(self):
-        """
-        When an image is built, it's released in relevant automatic pipelines
-
-        When an iteration's image is built, herd-service releases that image in
-        all of that iteration's branch's automatic pipelines.
-
-        branch -> iteration ----------> release
-          |-----> deployment pipeline <----|
-
-        """
-
-        # run SUT
-        result = release_in_automatic_pipelines(123)
-
-        # confirm that the insert sql was executed once
-        # SQL can do this whole operation so we should have it handle it.
-        self.mock_get_cur.return_value.execute.asert_called_once_with(
-            "INSERT INTO release (iteration_id, deployment_pipeline_id)\n" + \
-            "SELECT iteration_id, deployment_pipeline_id\n" + \
-            "  FROM iteration\n" + \
-            "  JOIN branch USING (branch_id)\n" + \
-            "  JOIN deployment_pipeline USING (branch_id)\n" + \
-            "where iteration_id = %s",
-            (123,),
-        )
-
-        # confirm we closed the cursor
-        self.mock_get_cur.return_value.close.assert_called_once_with()
 
     def test_set_iteration(self):
         """ should set properties on iterations """

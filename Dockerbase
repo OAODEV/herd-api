@@ -11,6 +11,7 @@ RUN apk update && \
       python3-dev
 RUN pip3 install --upgrade pip && \
     pip3 install bottle \
+                 nose \
                  psycopg2
 
 
