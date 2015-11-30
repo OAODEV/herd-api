@@ -14,7 +14,7 @@ def run_params(release_id):
     cursor.execute(
             "SELECT (service_name\n" + \
             "       ,branch_name\n" + \
-            "       ,config_id\n" + \
+            "       ,c.config_id\n" + \
             "       ,key_value_pairs\n" + \
             "       ,environment_name\n" + \
             "       ,commit_hash\n" + \
