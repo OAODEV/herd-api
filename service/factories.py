@@ -163,16 +163,19 @@ def idem_release_in_automatic_pipelines(iteration_id):
     try:
         cursor.execute(
             "INSERT INTO release (iteration_id, deployment_pipeline_id)\n" + \
-            "SELECT iteration_id, deployment_pipeline_id\n" + \
-            "  FROM iteration\n" + \
-            "  JOIN branch USING (branch_id)\n" + \
-            "  JOIN deployment_pipeline USING (branch_id)\n" + \
-            "where iteration_id = %s",
+            "     SELECT iteration_id, deployment_pipeline_id\n" + \
+            "       FROM iteration\n" + \
+            "       JOIN branch USING (branch_id)\n" + \
+            "       JOIN deployment_pipeline USING (branch_id)\n" + \
+            "      WHERE iteration_id = %s\n" + \
+            "  RETURNING release_id",
             (123,),
         )
     except:
         pass
+    release_ids = cursor.fetchall()
     cursor.close()
+    return release_ids
 
 idem_make_service = idem_maker(
     'service',

@@ -1,6 +1,9 @@
 FROM r.iadops.com/bottlebase:2
 MAINTAINER jesse.miller@adops.com
 
+# get swagger client
+RUN pip install pyswagger requests
+
 # set up for configurability
 RUN mkdir /secret
 

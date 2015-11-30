@@ -9,6 +9,8 @@ from factories import (
 from getters import get_iteration
 from setters import set_iteration
 
+from deployment import run
+
 from bottle import (
     request,
     abort,
@@ -48,12 +50,17 @@ def handle_build(commit_hash, image_name):
     ensure the api represents that the image was built from the commit
 
     The iteration gets it's build name updated and releases are created
-    for the branch's automatic pipelines
+    for the branch's automatic pipelines. The branch's automatic pipelines
+    are run.
 
     """
 
     print("handling build ({}, {})".format(commit_hash, image_name,))
     iteration = get_iteration(commit_hash=commit_hash)
     set_iteration(iteration['iteration_id'], {'image_name': image_name})
-    idem_release_in_automatic_pipelines(iteration['iteration_id'])
+
+    # TODO this should return the releases that were created not the pipelines
+    # released to. Then releases are what are run.
+    releases = idem_release_in_automatic_pipelines(iteration['iteration_id'])
+    run(releases)
     return {'iteration_id': iteration['iteration_id']}

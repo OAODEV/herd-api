@@ -53,11 +53,11 @@ class FactoryTestCase(unittest.TestCase):
         # SQL can do this whole operation so we should have it handle it.
         self.mock_get_cur.return_value.execute.asert_called_once_with(
             "INSERT INTO release (iteration_id, deployment_pipeline_id)\n" + \
-            "SELECT iteration_id, deployment_pipeline_id\n" + \
-            "  FROM iteration\n" + \
-            "  JOIN branch USING (branch_id)\n" + \
-            "  JOIN deployment_pipeline USING (branch_id)\n" + \
-            "where iteration_id = %s",
+            "     SELECT iteration_id, deployment_pipeline_id\n" + \
+            "       FROM iteration\n" + \
+            "       JOIN branch USING (branch_id)\n" + \
+            "       JOIN deployment_pipeline USING (branch_id)\n" + \
+            "      WHERE iteration_id = %s",
             (123,),
         )
 
