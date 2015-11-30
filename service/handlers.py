@@ -16,6 +16,12 @@ from bottle import (
     abort,
 )
 
+
+################################################################################
+###################### Handlers ################################################
+################################################################################
+
+
 def handle_branch_commit(repo_name,
                          feature_name,
                          branch_name,
@@ -64,3 +70,11 @@ def handle_build(commit_hash, image_name):
     releases = idem_release_in_automatic_pipelines(iteration['iteration_id'])
     run(releases)
     return {'iteration_id': iteration['iteration_id']}
+
+################################################################################
+################ Supporting Functions ##########################################
+################################################################################
+
+def release_in_automatic_pipelines(iteration_id):
+    """ Release this iteration in all it's branches automatic pipelines """
+    pass

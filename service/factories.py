@@ -18,7 +18,7 @@ def idem_maker(table_name, pk, keys, on_create_callback=lambda x: None):
             )
             raise ValueError(message)
 
-        # for every key missing a value, there should be an entry in value_kwargs
+        # for every key missing a value, there should be one in value_kwargs
         missing_values = []
         for k in keys[len(value_args):]:
             if k not in value_kwargs:
