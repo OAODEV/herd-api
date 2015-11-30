@@ -169,7 +169,7 @@ def idem_release_in_automatic_pipelines(iteration_id):
             "       JOIN deployment_pipeline USING (branch_id)\n" + \
             "      WHERE iteration_id = %s\n" + \
             "  RETURNING release_id",
-            (123,),
+            (iteration_id,),
         )
     except:
         pass
