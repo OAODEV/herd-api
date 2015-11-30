@@ -151,6 +151,10 @@ def k8s_repcon_description(service_name,
 
 def idem_post(resource, description):
     """ idempotently post a resource to k8s """
+    print()
+    print("posting {} request".format(resource))
+    pp(description)
+    print()
     response = requests.post(
         "https://{}/api/v1/default/{}".format(
             cfg('kubernetes_master_host'),
