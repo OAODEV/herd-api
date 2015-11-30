@@ -68,6 +68,6 @@ def handle_build(commit_hash, image_name):
     # TODO this should return the releases that were created not the pipelines
     # released to. Then releases are what are run.
     releases = idem_release_in_automatic_pipelines(iteration['iteration_id'])
-    print("running release number {}".format(releases)
+    print("running release number {}".format(releases))
     run(releases)
     return {'iteration_id': iteration['iteration_id']}
