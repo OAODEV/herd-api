@@ -85,7 +85,7 @@ class RunTests(unittest.TestCase):
             "  JOIN service s\n" + \
             "    ON s.service_id = f.service_id\n" + \
             " WHERE release_id = %s\n" + \
-            "   AND infrastructure = gce",
+            "   AND infrastructure_backend = gce",
             (123,),
         )
 
