@@ -234,6 +234,7 @@ def runner(run_request):
     """ carry out the run request """
     print("running {}".format(run_request))
     for param_set in run_params(run_request['release_id']):
+        print("params for run {}".format(param_set))
         actions[run_request['action']](param_set)
 
     return True
