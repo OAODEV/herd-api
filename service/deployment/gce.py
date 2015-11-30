@@ -156,7 +156,7 @@ def idem_post(resource, description):
     """ idempotently post a resource to k8s """
     print()
     print("posting {} request".format(resource))
-    pp(description)
+    pp.pprint(description)
     print()
     response = requests.post(
         "https://{}/api/v1/default/{}".format(
