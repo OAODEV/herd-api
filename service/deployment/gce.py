@@ -1,9 +1,12 @@
-import requests
 import base64
+import requests
+import pprint
 
 from config_finder import cfg
 
 from db import get_cursor
+
+pp = pprint.PrettyPrinter(indent=2)
 
 def run_params(release_id):
     """ return the paramaters needed for a run on gce """
