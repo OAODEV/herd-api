@@ -38,8 +38,8 @@ def run_params(release_id):
             "  JOIN service s\n" + \
             "    ON s.service_id = f.service_id\n" + \
             " WHERE release_id = %s\n" + \
-            "   AND infrastructure_backend = gce",
-        (release_id,),
+            "   AND infrastructure_backend = %s",
+        (release_id, "gce"),
     )
     result = cursor.fetchall()
     cursor.close()

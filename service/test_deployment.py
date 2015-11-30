@@ -85,8 +85,8 @@ class RunTests(unittest.TestCase):
             "  JOIN service s\n" + \
             "    ON s.service_id = f.service_id\n" + \
             " WHERE release_id = %s\n" + \
-            "   AND infrastructure_backend = gce",
-            (123,),
+            "   AND infrastructure_backend = %s",
+            (123, "gce"),
         )
 
         # should have created a service in k8s
