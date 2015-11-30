@@ -188,6 +188,8 @@ def update(param_set):
      image_name,
      settings) = param_set
 
+    print("updating {}".format(param_set))
+
     idem_post(
         "services",
         k8s_service_description(service_name, branch_name, 8000),
@@ -230,6 +232,7 @@ actions = {
 
 def runner(run_request):
     """ carry out the run request """
+    print("running {}".format(run_request))
     for param_set in run_params(run_request['release_id']):
         actions[run_request['action']](param_set)
 
