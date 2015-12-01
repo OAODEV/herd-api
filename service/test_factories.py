@@ -1,4 +1,5 @@
 import datetime
+import os
 import unittest
 from unittest.mock import (
     patch,
@@ -24,6 +25,7 @@ class FactoryTestCase(unittest.TestCase):
     """ factories might create objects and relationships based on new info """
 
     def setUp(self):
+        os.environ['default_infrastructure_backend'] = 'mockdib'
         get_cursor_patcher = patch('factories.get_cursor')
         self.mock_get_cur = get_cursor_patcher.start()
         self.mock_rowcount = PropertyMock(return_value=0)
@@ -189,10 +191,11 @@ class FactoryTestCase(unittest.TestCase):
             ('',),
         )
         self.mock_get_cur.return_value.execute.assert_any_call(
-            "INSERT INTO environment (settings) " + \
-            "VALUES (%s) " + \
+            "INSERT INTO environment\n" + \
+            "(settings, infrastructure_backend)\n" + \
+            "VALUES (%s, %s)\n" + \
             "RETURNING environment_id",
-            ('',),
+            ('', 'mockdib'),
         )
         self.mock_get_cur.return_value.execute.assert_any_call(
             "INSERT INTO deployment_pipeline " + \
@@ -358,8 +361,11 @@ class FactoryTestCase(unittest.TestCase):
 
         # confirm correct sql
         self.mock_get_cur.return_value.execute.assert_called_once_with(
-            "INSERT INTO environment (settings) VALUES (%s) RETURNING environment_id",
-            ('',),
+            "INSERT INTO environment\n" + \
+            "(settings, infrastructure_backend)\n" + \
+            "VALUES (%s, %s)\n" + \
+            "RETURNING environment_id",
+            ('', 'mockdib'),
         )
 
         # confirm that we got a reasonable id
@@ -373,6 +379,7 @@ class FactoryTestCase(unittest.TestCase):
             return_value = {
                 'environment_id': 101,
                 'settings': "mockKey=mockVal",
+                'infrastructure_backend': 'mock_backend',
             }
         )
         mock_get_env = get_env_patcher.start()
@@ -382,8 +389,11 @@ class FactoryTestCase(unittest.TestCase):
 
         # confirm correct sql was executed once
         self.mock_get_cur.return_value.execute.assert_called_once_with(
-            "INSERT INTO environment (settings) VALUES (%s) RETURNING environment_id",
-            ('mockKey=mockVal',)
+            "INSERT INTO environment\n" + \
+            "(settings, infrastructure_backend)\n" + \
+            "VALUES (%s, %s)\n" + \
+            "RETURNING environment_id",
+            ('mockKey=mockVal', 'mock_backend'),
         )
 
         # confirm that we got environment 57

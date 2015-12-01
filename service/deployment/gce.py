@@ -12,33 +12,33 @@ def run_params(release_id):
     """ return the paramaters needed for a run on gce """
     cursor = get_cursor()
     cursor.execute(
-            "SELECT (service_name\n" + \
-            "       ,branch_name\n" + \
-            "       ,c.config_id\n" + \
-            "       ,key_value_pairs\n" + \
-            "       ,environment_name\n" + \
-            "       ,commit_hash\n" + \
-            "       ,image_name\n" + \
-            "       ,settings\n" + \
-            "       )\n" + \
-            "  FROM release r\n" + \
-            "  JOIN iteration i\n" + \
-            "    ON i.iteration_id = r.iteration_id\n" + \
-            "  JOIN branch b\n" + \
-            "    ON b.branch_id = i.branch_id\n" + \
-            "  JOIN deployment_pipeline d\n" + \
-            "    ON b.branch_id = d.branch_id\n" + \
-            "   AND d.deployment_pipeline_id = r.deployment_pipeline_id\n" + \
-            "  JOIN config c\n" + \
-            "    ON c.config_id = d.config_id\n" + \
-            "  JOIN environment e\n" + \
-            "    ON e.environment_id = d.environment_id\n" + \
-            "  JOIN feature f\n" + \
-            "    ON f.feature_id = b.feature_id\n" + \
-            "  JOIN service s\n" + \
-            "    ON s.service_id = f.service_id\n" + \
-            " WHERE release_id = %s\n" + \
-            "   AND infrastructure_backend = %s",
+        "SELECT (service_name\n" + \
+        "       ,branch_name\n" + \
+        "       ,c.config_id\n" + \
+        "       ,key_value_pairs\n" + \
+        "       ,environment_name\n" + \
+        "       ,commit_hash\n" + \
+        "       ,image_name\n" + \
+        "       ,settings\n" + \
+        "       )\n" + \
+        "  FROM release r\n" + \
+        "  JOIN iteration i\n" + \
+        "    ON i.iteration_id = r.iteration_id\n" + \
+        "  JOIN branch b\n" + \
+        "    ON b.branch_id = i.branch_id\n" + \
+        "  JOIN deployment_pipeline d\n" + \
+        "    ON b.branch_id = d.branch_id\n" + \
+        "   AND d.deployment_pipeline_id = r.deployment_pipeline_id\n" + \
+        "  JOIN config c\n" + \
+        "    ON c.config_id = d.config_id\n" + \
+        "  JOIN environment e\n" + \
+        "    ON e.environment_id = d.environment_id\n" + \
+        "  JOIN feature f\n" + \
+        "    ON f.feature_id = b.feature_id\n" + \
+        "  JOIN service s\n" + \
+        "    ON s.service_id = f.service_id\n" + \
+        " WHERE release_id = %s\n" + \
+        "   AND infrastructure_backend = %s",
         (release_id, "gce"),
     )
     result = cursor.fetchall()

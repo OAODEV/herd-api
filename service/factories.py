@@ -1,5 +1,8 @@
-from db import get_cursor
 from functools import partial
+
+from config_finder import cfg
+
+from db import get_cursor
 from getters import (
     get_env,
     get_config,
@@ -128,18 +131,24 @@ def new_config(based_on_id=None):
     cursor.close()
     return config_id
 
-def new_env(based_on_id=None):
+def new_env(based_on_id=None, infrastructure_backend=None):
     """ Make a new environment based on the given config or an empty one """
+    if infrastructure_backend is None:
+        infrastructure_backend = cfg('default_infrastructure_backend', None)
     if based_on_id:
         based_on_env = get_env(based_on_id)
         settings_value = based_on_env['settings']
+        infrastructure_backend = based_on_env['infrastructure_backend']
     else:
         settings_value = ''
 
     cursor = get_cursor()
     cursor.execute(
-        "INSERT INTO environment (settings) VALUES (%s) RETURNING environment_id",
-        (settings_value,),
+        "INSERT INTO environment\n" + \
+        "(settings, infrastructure_backend)\n" + \
+        "VALUES (%s, %s)\n" + \
+        "RETURNING environment_id",
+        (settings_value, infrastructure_backend),
     )
     env_id = cursor.fetchone()[0]
     cursor.close()
