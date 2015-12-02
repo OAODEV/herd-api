@@ -164,7 +164,7 @@ def idem_post(resource, description):
         ),
         data=description,
         verify="/secret/k8s.pem",
-        auth=('admin', cfg("kubernetes_admin_password")),
+        auth=('admin', cfg("k8spassword")),
     )
     return response
 
