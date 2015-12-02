@@ -18,7 +18,7 @@ class RunTests(unittest.TestCase):
     def setUp(self):
 
         os.environ['kubernetes_master_host'] = "mock8s-host"
-        os.environ['kubernetes_admin_password'] = "mock8s-admin-pass"
+        os.environ['k8spassword'] = "mock8s-admin-pass"
 
         requests_patcher = patch("deployment.gce.requests")
         self.mock_requests = requests_patcher.start()
