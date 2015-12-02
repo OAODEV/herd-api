@@ -21,7 +21,7 @@ def handle_branch_commit(repo_name,
                          branch_name,
                          commit_hash):
     """
-    Ensure the api represents an associates the appropriate objects
+    Ensure the api represents and associates the appropriate objects
 
     repo_name represented as a service and associated with,
     feature_name represented as a feature and associated with,

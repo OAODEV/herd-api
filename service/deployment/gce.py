@@ -12,15 +12,14 @@ def run_params(release_id):
     """ return the paramaters needed for a run on gce """
     cursor = get_cursor()
     cursor.execute(
-        "SELECT (service_name\n" + \
-        "       ,branch_name\n" + \
-        "       ,c.config_id\n" + \
-        "       ,key_value_pairs\n" + \
-        "       ,environment_name\n" + \
-        "       ,commit_hash\n" + \
-        "       ,image_name\n" + \
-        "       ,settings\n" + \
-        "       )\n" + \
+        "SELECT service_name\n" + \
+        "      ,branch_name\n" + \
+        "      ,c.config_id\n" + \
+        "      ,key_value_pairs\n" + \
+        "      ,environment_name\n" + \
+        "      ,commit_hash\n" + \
+        "      ,image_name\n" + \
+        "      ,settings\n" + \
         "  FROM release r\n" + \
         "  JOIN iteration i\n" + \
         "    ON i.iteration_id = r.iteration_id\n" + \
@@ -232,9 +231,7 @@ actions = {
 
 def runner(run_request):
     """ carry out the run request """
-    print("running {}".format(run_request))
     for param_set in run_params(run_request['release_id']):
-        print("params for run {}".format(param_set))
         actions[run_request['action']](param_set)
 
     return True
