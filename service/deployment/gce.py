@@ -159,7 +159,7 @@ def idem_post(resource, description):
     print()
     response = requests.post(
         "https://{}/api/v1/default/{}".format(
-            cfg('kubernetes_master_host'),
+            cfg('kubernetes_master_host', 'kubernetes'),
             resource,
         ),
         data=description,

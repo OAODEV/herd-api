@@ -2,7 +2,7 @@ FROM us.gcr.io/lexical-cider-93918/bottlebase:2
 MAINTAINER jesse.miller@adops.com
 
 # get swagger client
-RUN pip install pyswagger requests
+RUN pip install requests
 
 # set up for configurability
 RUN mkdir /secret
