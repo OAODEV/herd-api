@@ -59,15 +59,14 @@ class RunTests(unittest.TestCase):
         # we should have grabbed the info for a service, secret and repcon from
         # the database
         self.mock_get_cursor.return_value.execute.assert_called_with(
-            "SELECT (service_name\n" + \
-            "       ,branch_name\n" + \
-            "       ,c.config_id\n" + \
-            "       ,key_value_pairs\n" + \
-            "       ,environment_name\n" + \
-            "       ,commit_hash\n" + \
-            "       ,image_name\n" + \
-            "       ,settings\n" + \
-            "       )\n" + \
+            "SELECT service_name\n" + \
+            "      ,branch_name\n" + \
+            "      ,c.config_id\n" + \
+            "      ,key_value_pairs\n" + \
+            "      ,environment_name\n" + \
+            "      ,commit_hash\n" + \
+            "      ,image_name\n" + \
+            "      ,settings\n" + \
             "  FROM release r\n" + \
             "  JOIN iteration i\n" + \
             "    ON i.iteration_id = r.iteration_id\n" + \
