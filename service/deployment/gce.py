@@ -66,6 +66,7 @@ def k8s_secret_description(key_value_pairs,
                            branch_name,
                            config_id):
     """ return the k8s secret description """
+    print("creating secret with pairs {}".format(key_value_pairs))
     data = {}
     for line in key_value_pairs.strip().split('\n'):
         key, value = line.split('=')
