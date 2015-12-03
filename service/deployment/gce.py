@@ -158,7 +158,7 @@ def idem_post(resource, description):
     pp.pprint(description)
     print()
     response = requests.post(
-        "https://{}/api/v1/default/{}".format(
+        "http://{}/api/v1/default/{}".format(
             cfg('kubeproxy'),
             resource,
         ),
