@@ -157,7 +157,7 @@ def idem_post(resource, description):
     print()
     print("posting {} request".format(resource))
     pp.pprint(description)
-    print()
+    print("return:")
     response = requests.post(
         "http://{}/api/v1/default/{}".format(
             cfg('kubeproxy'),
@@ -167,6 +167,7 @@ def idem_post(resource, description):
         verify="/secret/k8s.pem",
         auth=('admin', cfg("k8spassword")),
     )
+    pp.pprint(response)
     return response
 
 def gc_repcons(service_name,
