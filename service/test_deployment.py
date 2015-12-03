@@ -7,6 +7,7 @@ from unittest.mock import (
 import base64
 
 from deployment.gce import runner as gce_runner
+from deployment.gce import k8s_secret_description
 from deployment import (
     actions,
     run,
@@ -44,6 +45,33 @@ class RunTests(unittest.TestCase):
 
     def tearDown(self):
         patch.stopall()
+
+    def test_secret_description_handles_empty_string(self):
+        """ creating a service with no key value pairs should not fail """
+        # run SUT
+        secret = k8s_secret_description('', 'sname', 'bname', 123)
+
+        # confirm
+        self.assertEqual(secret, {
+            'kind': 'Secret',
+            'apiVersion': 'v1',
+            'metadata': {
+                'name': 'sname_bname_config_123',
+            },
+            'data': {},
+        })
+
+    @unittest.skip('skipping until settings are included in rc')
+    def test_rc_description_handles_empty_env_settings_string(self):
+        """
+        creating an rc with an environment witn no settings should not fail
+
+        """
+
+        # run SUT
+        rc = k8s_repcon_description('s', 'b', 123, 'e', 'c', 'i', '')
+
+        # confirm
 
     def test_gce_runner_infrastructure_match(self):
         """

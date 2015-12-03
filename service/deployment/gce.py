@@ -66,9 +66,9 @@ def k8s_secret_description(key_value_pairs,
                            branch_name,
                            config_id):
     """ return the k8s secret description """
-    print("creating secret with pairs {}".format(key_value_pairs))
+    print("creating secret with pairs '{}'".format(key_value_pairs))
     data = {}
-    for line in key_value_pairs.strip().split('\n'):
+    for line in [l for l in key_value_pairs.strip().split('\n') if l]:
         key, value = line.split('=')
         # python3 is very strict about encoding!
         data[key] = base64.b64encode(value.encode('ascii'))
