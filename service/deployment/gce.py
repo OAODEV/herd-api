@@ -167,7 +167,7 @@ def idem_post(resource, description):
         verify="/secret/k8s.pem",
         auth=('admin', cfg("k8spassword")),
     )
-    pp.pprint(response)
+    pp.pprint(response.text)
     return response
 
 def gc_repcons(service_name,
