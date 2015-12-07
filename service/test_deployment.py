@@ -38,7 +38,7 @@ class RunTests(unittest.TestCase):
              789, # mock config id
              "mock-key=mock-value\nmk=mv\n",
              "mock_env_name",
-             "mock_commit_hash",
+             "mockcommithash",
              "mock_image_name",
              "mock_settings",)]
         )
@@ -56,7 +56,7 @@ class RunTests(unittest.TestCase):
             'kind': 'Secret',
             'apiVersion': 'v1',
             'metadata': {
-                'name': 'sname_bname_config_123',
+                'name': 'sname-bname-config-123',
             },
             'data': {},
         })
@@ -123,7 +123,7 @@ class RunTests(unittest.TestCase):
                 "kind": "Service",
                 "apiVersion": "v1",
                 "metadata": {
-                    "name": "mock_service_name_mock_branch_name",
+                    "name": "mock-service-name-mock-branch-name",
                 },
                 "spec": {
                     "ports": [
@@ -144,7 +144,7 @@ class RunTests(unittest.TestCase):
                 "kind": "Secret",
                 "apiVersion": "v1",
                 "metadata": {
-                    "name": "mock_service_name_mock_branch_name_config_789",
+                    "name": "mock-service-name-mock-branch-name-config-789",
                 },
                 "data": {
                     "mock-key": base64.b64encode(b'mock-value'),
@@ -156,8 +156,9 @@ class RunTests(unittest.TestCase):
         )
 
         # should have created a replication controller in k8s
-        repcon_name = "mock_branch_name_mock_env_name_mock_commit_hash_789"
-        service_identity = "mock_service_name_mock_branch_name"
+        repcon_name = "mock-branch-name-mock-env-name-mockcommithash-789"
+        service_identity = "mock-service-name-mock-branch-name"
+
         self.mock_requests.post.assert_any_call(
             "http://mock8s-host/api/v1/namespaces/default/" + \
                 "replicationcontrollers",
@@ -184,15 +185,15 @@ class RunTests(unittest.TestCase):
                         },
                         "spec": {
                             "volumes": {
-                                "name": repcon_name + "_secret",
+                                "name": repcon_name + "-secret",
                                 "secret": {
-                                    "secretName": "mock_branch_name_config_789",
+                                    "secretName": "mock-branch-name-config-789",
                                 },
                             },
                             "containers": [
                                 {
                                     "name": service_identity,
-                                    "image": "mock_image_name",
+                                    "image": "mock-image-name",
                                     "ports": [
                                         {
                                             "containerPort": 8000,
@@ -200,7 +201,7 @@ class RunTests(unittest.TestCase):
                                     ],
                                     "volumeMounts": [
                                         {
-                                            "name": repcon_name + "_secret",
+                                            "name": repcon_name + "-secret",
                                             "readOnly": True,
                                             "mountPath": "/var/secret/env"
                                         }

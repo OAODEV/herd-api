@@ -50,7 +50,7 @@ def k8s_service_description(service_name, branch_name, port):
         "kind": "Service",
         "apiVersion": "v1",
         "metadata": {
-            "name": "{}_{}".format(service_name, branch_name),
+            "name": "{}-{}".format(service_name, branch_name),
         },
         "spec": {
             "ports": [
@@ -77,7 +77,7 @@ def k8s_secret_description(key_value_pairs,
         "kind": "Secret",
         "apiVersion": "v1",
         "metadata": {
-            "name": "{}_{}_config_{}".format(
+            "name": "{}-{}-config-{}".format(
                 service_name,
                 branch_name,
                 config_id,
@@ -94,10 +94,10 @@ def k8s_repcon_description(service_name,
                            image_name,
                            settings):
     """ return the k8s replication controller description """
-    rc_name = "{}_{}_{}_{}".format(
+    rc_name = "{}-{}-{}-{}".format(
         branch_name, environment_name, commit_hash, config_id
     )
-    service_identity = "{}_{}".format(service_name, branch_name)
+    service_identity = "{}-{}".format(service_name, branch_name)
     return {
         "kind": "ReplicationController",
         "apiVersion": "v1",
@@ -121,9 +121,9 @@ def k8s_repcon_description(service_name,
                 },
                 "spec": {
                     "volumes": {
-                        "name": "{}_secret".format(rc_name),
+                        "name": "{}-secret".format(rc_name),
                         "secret": {
-                            "secretName": "{}_config_{}".format(
+                            "secretName": "{}-config-{}".format(
                                 branch_name,
                                 config_id
                             ),
@@ -140,7 +140,7 @@ def k8s_repcon_description(service_name,
                             ],
                             "volumeMounts": [
                                 {
-                                    "name": "{}_secret".format(rc_name),
+                                    "name": "{}-secret".format(rc_name),
                                     "readOnly": True,
                                     "mountPath": "/var/secret/env",
                                 }
@@ -188,6 +188,12 @@ def update(param_set):
      commit_hash,
      image_name,
      settings) = param_set
+
+    # k8s expects names to be valid urls so we need to replace '_' with '-'
+    service_name = service_name.replace('_', '-')
+    branch_name = branch_name.replace('_', '-')
+    environment_name = environment_name.replace('_', '-')
+    image_name = image_name.replace('_', '-')
 
     print("updating {}".format(param_set))
 
