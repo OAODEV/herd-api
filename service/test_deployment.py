@@ -118,7 +118,7 @@ class RunTests(unittest.TestCase):
 
         # should have created a service in k8s
         self.mock_requests.post.assert_any_call(
-            "http://mock8s-host/api/v1/default/services",
+            "http://mock8s-host/api/v1/namespaces/default/services",
             data={
                 "kind": "Service",
                 "apiVersion": "v1",
