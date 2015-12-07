@@ -154,19 +154,16 @@ def k8s_repcon_description(service_name,
 
 def idem_post(resource, description):
     """ idempotently post a resource to k8s """
-    print()
-    print("posting {} request".format(resource))
+    endpoint = "http://{}/api/v1/{}".format(cfg('kubeproxy'), resource)
+    print("posting {} request".format(endpoint))
     pp.pprint(description)
-    print("return:")
     response = requests.post(
-        "http://{}/api/v1/default/{}".format(
-            cfg('kubeproxy'),
-            resource,
-        ),
+        endpoint,
         data=description,
         verify="/secret/k8s.pem",
         auth=('admin', cfg("k8spassword")),
     )
+    print("return:")
     pp.pprint(response.text)
     return response
 
