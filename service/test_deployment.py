@@ -139,7 +139,7 @@ class RunTests(unittest.TestCase):
 
         # should have created a secret in k8s
         self.mock_requests.post.assert_any_call(
-            "http://mock8s-host/api/v1/default/secrets",
+            "http://mock8s-host/api/v1/namespaces/default/secrets",
             data={
                 "kind": "Secret",
                 "apiVersion": "v1",
@@ -159,7 +159,8 @@ class RunTests(unittest.TestCase):
         repcon_name = "mock_branch_name_mock_env_name_mock_commit_hash_789"
         service_identity = "mock_service_name_mock_branch_name"
         self.mock_requests.post.assert_any_call(
-            "http://mock8s-host/api/v1/default/replicationcontrollers",
+            "http://mock8s-host/api/v1/namespaces/default/" + \
+                "replicationcontrollers",
             data={
                 "kind": "ReplicationController",
                 "apiVersion": "v1",
