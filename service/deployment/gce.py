@@ -71,7 +71,7 @@ def k8s_secret_description(key_value_pairs,
     for line in [l for l in key_value_pairs.strip().split('\n') if l]:
         key, value = line.split('=')
         # python3 is very strict about encoding!
-        data[key] = base64.b64encode(value.encode('ascii'))
+        data[key] = base64.b64encode(value.encode('ascii')).decode('utf-8')
 
     return {
         "kind": "Secret",
@@ -162,7 +162,7 @@ def idem_post(resource, description):
     pp.pprint(description)
     response = requests.post(
         endpoint,
-        data=description,
+        json=description,
         verify="/secret/k8s.pem",
         auth=('admin', cfg("k8spassword")),
     )

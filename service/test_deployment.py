@@ -119,7 +119,7 @@ class RunTests(unittest.TestCase):
         # should have created a service in k8s
         self.mock_requests.post.assert_any_call(
             "http://mock8s-host/api/v1/namespaces/default/services",
-            data={
+            json={
                 "kind": "Service",
                 "apiVersion": "v1",
                 "metadata": {
@@ -140,15 +140,15 @@ class RunTests(unittest.TestCase):
         # should have created a secret in k8s
         self.mock_requests.post.assert_any_call(
             "http://mock8s-host/api/v1/namespaces/default/secrets",
-            data={
+            json={
                 "kind": "Secret",
                 "apiVersion": "v1",
                 "metadata": {
                     "name": "mock-service-name-mock-branch-name-config-789",
                 },
                 "data": {
-                    "mock-key": base64.b64encode(b'mock-value'),
-                    "mk": base64.b64encode(b'mv'),
+                    "mock-key": base64.b64encode(b'mock-value').decode('utf-8'),
+                    "mk": base64.b64encode(b'mv').decode('utf-8'),
                 }
             },
             verify="/secret/k8s.pem",
@@ -162,7 +162,7 @@ class RunTests(unittest.TestCase):
         self.mock_requests.post.assert_any_call(
             "http://mock8s-host/api/v1/namespaces/default/" + \
                 "replicationcontrollers",
-            data={
+            json={
                 "kind": "ReplicationController",
                 "apiVersion": "v1",
                 "metadata": {
