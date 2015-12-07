@@ -131,7 +131,9 @@ def new_config(based_on_id=None):
     cursor.close()
     return config_id
 
-def new_env(based_on_id=None, infrastructure_backend=None):
+def new_env(based_on_id=None,
+            infrastructure_backend=None,
+            environment_name='qa-sandbox'):
     """ Make a new environment based on the given config or an empty one """
     if infrastructure_backend is None:
         infrastructure_backend = cfg('default_infrastructure_backend', None)
@@ -145,10 +147,10 @@ def new_env(based_on_id=None, infrastructure_backend=None):
     cursor = get_cursor()
     cursor.execute(
         "INSERT INTO environment\n" + \
-        "(settings, infrastructure_backend)\n" + \
-        "VALUES (%s, %s)\n" + \
+        "(settings, infrastructure_backend, environment_name)\n" + \
+        "VALUES (%s, %s, %s)\n" + \
         "RETURNING environment_id",
-        (settings_value, infrastructure_backend),
+        (settings_value, infrastructure_backend, environment_name),
     )
     env_id = cursor.fetchone()[0]
     cursor.close()

@@ -192,10 +192,10 @@ class FactoryTestCase(unittest.TestCase):
         )
         self.mock_get_cur.return_value.execute.assert_any_call(
             "INSERT INTO environment\n" + \
-            "(settings, infrastructure_backend)\n" + \
-            "VALUES (%s, %s)\n" + \
+            "(settings, infrastructure_backend, environment_name)\n" + \
+            "VALUES (%s, %s, %s)\n" + \
             "RETURNING environment_id",
-            ('', 'mockdib'),
+            ('', 'mockdib', 'qa-sandbox'),
         )
         self.mock_get_cur.return_value.execute.assert_any_call(
             "INSERT INTO deployment_pipeline " + \
@@ -362,10 +362,10 @@ class FactoryTestCase(unittest.TestCase):
         # confirm correct sql
         self.mock_get_cur.return_value.execute.assert_called_once_with(
             "INSERT INTO environment\n" + \
-            "(settings, infrastructure_backend)\n" + \
-            "VALUES (%s, %s)\n" + \
+            "(settings, infrastructure_backend, environment_name)\n" + \
+            "VALUES (%s, %s, %s)\n" + \
             "RETURNING environment_id",
-            ('', 'mockdib'),
+            ('', 'mockdib', 'qa-sandbox'),
         )
 
         # confirm that we got a reasonable id
@@ -390,10 +390,10 @@ class FactoryTestCase(unittest.TestCase):
         # confirm correct sql was executed once
         self.mock_get_cur.return_value.execute.assert_called_once_with(
             "INSERT INTO environment\n" + \
-            "(settings, infrastructure_backend)\n" + \
-            "VALUES (%s, %s)\n" + \
+            "(settings, infrastructure_backend, environment_name)\n" + \
+            "VALUES (%s, %s, %s)\n" + \
             "RETURNING environment_id",
-            ('mockKey=mockVal', 'mock_backend'),
+            ('mockKey=mockVal', 'mock_backend', 'qa-sandbox'),
         )
 
         # confirm that we got environment 57
