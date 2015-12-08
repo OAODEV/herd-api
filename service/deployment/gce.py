@@ -2,11 +2,25 @@ import base64
 import requests
 import pprint
 
+from functools import singledispatch
 from config_finder import cfg
 
 from db import get_cursor
 
 pp = pprint.PrettyPrinter(indent=2)
+
+@singledispatch
+def b64(*args, **kwargs):
+    print(args, kwargs)
+    raise TypeError(
+        "b64 cannot accept types {}, {}\n".format(
+            tuple([type(a) for a in args]),
+            dict([(p[0], type(p[1])) for p in kwargs.items()])
+        )
+    )
+
+b64.register(bytes)(lambda bs: base64.b64encode(bs))
+b64.register(str)  (lambda  s: base64.b64encode(s.encode()).decode())
 
 def run_params(release_id):
     """ return the paramaters needed for a run on gce """
@@ -71,7 +85,7 @@ def k8s_secret_description(key_value_pairs,
     for line in [l for l in key_value_pairs.strip().split('\n') if l]:
         key, value = line.split('=')
         # python3 is very strict about encoding!
-        data[key] = base64.b64encode(value.encode('ascii')).decode('utf-8')
+        data[key] = b64(value)
 
     return {
         "kind": "Secret",
@@ -192,7 +206,7 @@ def update(param_set):
     # k8s expects names to be valid urls so we need to replace '_' with '-'
     service_name = service_name.replace('_', '-')
     branch_name = branch_name.replace('_', '-')
-    environment_name = environment_name.replace('_', '-')
+    environment_name = str(environment_name).replace('_', '-')
     image_name = image_name.replace('_', '-')
 
     print("updating {}".format(param_set))
