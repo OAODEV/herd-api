@@ -123,7 +123,7 @@ class RunTests(unittest.TestCase):
                 "kind": "Service",
                 "apiVersion": "v1",
                 "metadata": {
-                    "name": "mock-service-name-mock-branch-name",
+                    "name": "mock-servic-mock-branch",
                 },
                 "spec": {
                     "ports": [
@@ -184,12 +184,12 @@ class RunTests(unittest.TestCase):
                             },
                         },
                         "spec": {
-                            "volumes": {
+                            "volumes": [{
                                 "name": repcon_name + "-secret",
                                 "secret": {
                                     "secretName": "mock-branch-name-config-789",
                                 },
-                            },
+                            }],
                             "containers": [
                                 {
                                     "name": service_identity,

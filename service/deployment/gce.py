@@ -1,4 +1,5 @@
 import base64
+import re
 import requests
 import pprint
 
@@ -60,12 +61,29 @@ def run_params(release_id):
 
 def k8s_service_description(service_name, branch_name, port):
     """ return the k8s service description """
+    k8s_name_match = re.search(
+        # get only the string that matches k8s restrictions
+        '[a-z]([-a-z0-9]*[a-z0-9])?',
+        # limit the length of the name to fit in k8s restrictions
+        "{}-{}".format(service_name[:11], branch_name[:12]),
+    )
+
+    if k8s_name_match:
+        k8s_name = k8s_name_match.group()
+    else:
+        # if that doesn't create a good name, just fail.
+        raise NameError(
+            'Counld not make a good k8s name from {} and {}'.format(
+                service_name,
+                branch_name,
+            )
+        )
+
     return {
         "kind": "Service",
         "apiVersion": "v1",
         "metadata": {
-            # we need to limit the length of the name to fit in k8s restrictions
-            "name": "{}-{}".format(service_name[:11], branch_name[:12]),
+            "name": k8s_name,
         },
         "spec": {
             "ports": [
