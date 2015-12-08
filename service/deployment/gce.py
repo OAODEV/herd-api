@@ -64,7 +64,8 @@ def k8s_service_description(service_name, branch_name, port):
         "kind": "Service",
         "apiVersion": "v1",
         "metadata": {
-            "name": "{}-{}".format(service_name, branch_name),
+            # we need to limit the length of the name to fit in k8s restrictions
+            "name": "{}-{}".format(service_name[:11], branch_name[:12]),
         },
         "spec": {
             "ports": [
@@ -134,15 +135,17 @@ def k8s_repcon_description(service_name,
                     },
                 },
                 "spec": {
-                    "volumes": {
-                        "name": "{}-secret".format(rc_name),
-                        "secret": {
-                            "secretName": "{}-config-{}".format(
-                                branch_name,
-                                config_id
-                            ),
+                    "volumes": [
+                        {
+                            "name": "{}-secret".format(rc_name),
+                            "secret": {
+                                "secretName": "{}-config-{}".format(
+                                    branch_name,
+                                    config_id
+                                ),
+                            },
                         },
-                    },
+                    ],
                     "containers": [
                         {
                             "name": service_identity,
