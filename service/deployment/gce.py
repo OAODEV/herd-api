@@ -92,6 +92,9 @@ def k8s_service_description(service_name, branch_name, port):
                 },
             ],
         },
+        "selector" {
+            "service": "{}-{}-service".format(service_name, branch_name)
+        },
     }
 
 def k8s_secret_description(key_value_pairs,
@@ -119,6 +122,11 @@ def k8s_secret_description(key_value_pairs,
         "data": data,
     }
 
+def make_rc_name(branch_name, environment_name, commit_hash, config_id):
+    return "{}-{}-{}-{}".format(
+        branch_name, environment_name, commit_hash, config_id
+    )
+
 def k8s_repcon_description(service_name,
                            branch_name,
                            config_id,
@@ -127,10 +135,13 @@ def k8s_repcon_description(service_name,
                            image_name,
                            settings):
     """ return the k8s replication controller description """
-    rc_name = "{}-{}-{}-{}".format(
-        branch_name, environment_name, commit_hash, config_id
+    rc_name = make_rc_name(
+        branch_name,
+        environment_name,
+        commit_hash,
+        config_id
     )
-    service_identity = "{}-{}".format(service_name, branch_name)
+    service_identity = "{}-{}-service".format(service_name, branch_name)
     return {
         "kind": "ReplicationController",
         "apiVersion": "v1",
