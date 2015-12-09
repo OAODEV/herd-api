@@ -92,7 +92,7 @@ def k8s_service_description(service_name, branch_name, port):
                 },
             ],
         },
-        "selector" {
+        "selector": {
             "service": "{}-{}-service".format(service_name, branch_name)
         },
     }
@@ -123,9 +123,38 @@ def k8s_secret_description(key_value_pairs,
     }
 
 def make_rc_name(branch_name, environment_name, commit_hash, config_id):
-    return "{}-{}-{}-{}".format(
-        branch_name, environment_name, commit_hash, config_id
+    """
+    make a replication controller name suitable for k8s labels
+    must have at most 63 characters,
+    must match regex '([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?'
+
+    """
+
+    # limit the string to 63 characters
+    name = "{}-{}-{}-{}".format(    #  4 dashes
+        branch_name[:27],           # 27 branch name
+        environment_name[:20],      # 20 environment name
+        commit_hash[:7],            #  7 commit hash
+        config_id,                  #  5 left for config id
     )
+
+    # check that it matches the required regex
+    name_match = re.search(
+        '(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?',
+        name,
+    )
+    if not name_match:
+        raise NameError(
+            "cannot make good k8s name from {}".format([
+                branch_name,
+                environment_name,
+                commit_hash,
+                config_id,
+            ])
+        )
+
+    return name_match.group()
+
 
 def k8s_repcon_description(service_name,
                            branch_name,
@@ -141,7 +170,7 @@ def k8s_repcon_description(service_name,
         commit_hash,
         config_id
     )
-    service_identity = "{}-{}-service".format(service_name, branch_name)
+    service_identity = "{}-{}".format(service_name, branch_name)
     return {
         "kind": "ReplicationController",
         "apiVersion": "v1",

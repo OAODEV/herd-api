@@ -125,6 +125,9 @@ class RunTests(unittest.TestCase):
                 "metadata": {
                     "name": "mock-servic-mock-branch",
                 },
+                "selector":{
+                    'service': 'mock-service-name-mock-branch-name-service',
+                },
                 "spec": {
                     "ports": [
                         {
@@ -156,7 +159,7 @@ class RunTests(unittest.TestCase):
         )
 
         # should have created a replication controller in k8s
-        repcon_name = "mock-branch-name-mock-env-name-mockcommithash-789"
+        repcon_name = "mock-branch-name-mock-env-name-mockcom-789"
         service_identity = "mock-service-name-mock-branch-name"
 
         self.mock_requests.post.assert_any_call(
