@@ -10,6 +10,20 @@ from db import get_cursor
 
 pp = pprint.PrettyPrinter(indent=2)
 
+"""
+Python3 is very strict about encoding so I wanted to encapsulate
+some of the encode/decode bytes->string and back boiler plate
+into a single function that would return the type that it was given
+but base64 encoded.
+
+This works on bytes and strings and anything else is a TypeError
+
+bytes is the base64.b64encode library function
+str   encodes the string to bytes, base64s it then decodes it back
+      to a string
+
+"""
+
 @singledispatch
 def b64(*args, **kwargs):
     print(args, kwargs)
@@ -20,8 +34,13 @@ def b64(*args, **kwargs):
         )
     )
 
-b64.register(bytes)(lambda bs: base64.b64encode(bs))
-b64.register(str)  (lambda  s: base64.b64encode(s.encode()).decode())
+# register the library funciton for bytes
+b64.register(bytes)(base64.b64encode)
+
+# register one that encodes and decodes for strings
+@b64.register(str)
+def _(s):
+    return base64.b64encode(s.encode()).decode()
 
 def run_params(release_id):
     """ return the paramaters needed for a run on gce """
@@ -106,7 +125,6 @@ def k8s_secret_description(key_value_pairs,
     data = {}
     for line in [l for l in key_value_pairs.strip().split('\n') if l]:
         key, value = line.split('=')
-        # python3 is very strict about encoding!
         data[key] = b64(value)
 
     return {
@@ -197,9 +215,10 @@ def k8s_repcon_description(service_name,
                         {
                             "name": "{}-secret".format(rc_name),
                             "secret": {
-                                "secretName": "{}-config-{}".format(
+                                "secretName": "{}-{}-config-{}".format(
+                                    service_name,
                                     branch_name,
-                                    config_id
+                                    config_id,
                                 ),
                             },
                         },

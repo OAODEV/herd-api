@@ -140,6 +140,8 @@ class RunTests(unittest.TestCase):
             auth=('admin', 'mock8s-admin-pass'),
         )
 
+        secret_name = "mock-service-name-mock-branch-name-config-789"
+
         # should have created a secret in k8s
         self.mock_requests.post.assert_any_call(
             "http://mock8s-host/api/v1/namespaces/default/secrets",
@@ -147,7 +149,7 @@ class RunTests(unittest.TestCase):
                 "kind": "Secret",
                 "apiVersion": "v1",
                 "metadata": {
-                    "name": "mock-service-name-mock-branch-name-config-789",
+                    "name": secret_name,
                 },
                 "data": {
                     "mock-key": base64.b64encode(b'mock-value').decode('utf-8'),
@@ -190,7 +192,7 @@ class RunTests(unittest.TestCase):
                             "volumes": [{
                                 "name": repcon_name + "-secret",
                                 "secret": {
-                                    "secretName": "mock-branch-name-config-789",
+                                    "secretName": secret_name,
                                 },
                             }],
                             "containers": [
