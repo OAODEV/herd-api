@@ -125,15 +125,15 @@ class RunTests(unittest.TestCase):
                 "metadata": {
                     "name": "mock-servic-mock-branch",
                 },
-                "selector":{
-                    'service': 'mock-service-name-mock-branch-name-service',
-                },
                 "spec": {
                     "ports": [
                         {
                             "port": 8000,
                         }
                     ],
+                    "selector":{
+                        'service': 'mock-service-name-mock-branch-name-service',
+                    },
                 },
             },
             verify="/secret/k8s.pem",
