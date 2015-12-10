@@ -287,7 +287,6 @@ def update(param_set):
     service_name = service_name.replace('_', '-')
     branch_name = branch_name.replace('_', '-')
     environment_name = str(environment_name).replace('_', '-')
-    image_name = image_name.replace('_', '-')
 
     print("updating {}".format(param_set))
 

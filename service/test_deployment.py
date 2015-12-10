@@ -198,7 +198,7 @@ class RunTests(unittest.TestCase):
                             "containers": [
                                 {
                                     "name": service_identity,
-                                    "image": "mock-image-name",
+                                    "image": "mock_image_name",
                                     "ports": [
                                         {
                                             "containerPort": 8000,
