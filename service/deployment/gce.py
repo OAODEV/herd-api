@@ -105,14 +105,14 @@ def k8s_service_description(service_name, branch_name, port):
             "name": k8s_name,
         },
         "spec": {
+            "selector": {
+                "service": "{}-{}-service".format(service_name, branch_name)
+            },
             "ports": [
                 {
                     "port": 8000,
                 },
             ],
-        },
-        "selector": {
-            "service": "{}-{}-service".format(service_name, branch_name)
         },
     }
 
