@@ -1,3 +1,7 @@
+from functools import partial
+
+from config_finder import cfg
+
 from db import get_cursor
 from getters import (
     get_env,
@@ -77,7 +81,12 @@ def idem_maker(table_name, pk, keys, on_create_callback=lambda x: None):
     idem_maker.__name__ = "{}_{}_maker".format(table_name, pk)
     return idem_maker
 
-def new_deployment_pipeline(branch_id, copy_config_id=None, copy_env_id=None):
+def new_deployment_pipeline(
+        branch_id,
+        copy_config_id=None,
+        copy_env_id=None,
+        automatic=False,
+):
     """
     Make a new deployment pipeline from a branch
 
@@ -96,10 +105,10 @@ def new_deployment_pipeline(branch_id, copy_config_id=None, copy_env_id=None):
     cursor = get_cursor()
     cursor.execute(
         "INSERT INTO deployment_pipeline " + \
-        "(branch_id, config_id, environment_id) " + \
-        "VALUES (%s, %s, %s) " + \
+        "(branch_id, config_id, environment_id, automatic) " + \
+        "VALUES (%s, %s, %s, %s) " + \
         "RETURNING deployment_pipeline_id",
-        (branch_id, config_id, env_id),
+        (branch_id, config_id, env_id, automatic),
     )
     deployment_pipeline_id = cursor.fetchone()[0]
     cursor.close()
@@ -122,22 +131,62 @@ def new_config(based_on_id=None):
     cursor.close()
     return config_id
 
-def new_env(based_on_id=None):
+def new_env(based_on_id=None,
+            infrastructure_backend=None,
+            environment_name='qa-sandbox'):
     """ Make a new environment based on the given config or an empty one """
+    if infrastructure_backend is None:
+        infrastructure_backend = cfg('default_infrastructure_backend', None)
     if based_on_id:
         based_on_env = get_env(based_on_id)
         settings_value = based_on_env['settings']
+        infrastructure_backend = based_on_env['infrastructure_backend']
     else:
         settings_value = ''
 
     cursor = get_cursor()
     cursor.execute(
-        "INSERT INTO environment (settings) VALUES (%s) RETURNING environment_id",
-        (settings_value,),
+        "INSERT INTO environment\n" + \
+        "(settings, infrastructure_backend, environment_name)\n" + \
+        "VALUES (%s, %s, %s)\n" + \
+        "RETURNING environment_id",
+        (settings_value, infrastructure_backend, environment_name),
     )
     env_id = cursor.fetchone()[0]
     cursor.close()
     return env_id
+
+def idem_release_in_automatic_pipelines(iteration_id):
+    """
+    Idempotently release an iteration in all it's automatic pipelines
+
+    The idempotency is gained by a uniqueness constraint in the database
+    on the (iteration_id, deployment_pipeline_id) pair.
+
+    only the first insert can happen without a conflict (which we will need to
+    catch and do nothing).
+
+    when we are on postgres 9.5 we can do this with "ON CONFLICT DO NOTHING"
+
+    """
+
+    cursor = get_cursor()
+    try:
+        cursor.execute(
+            "INSERT INTO release (iteration_id, deployment_pipeline_id)\n" + \
+            "     SELECT iteration_id, deployment_pipeline_id\n" + \
+            "       FROM iteration\n" + \
+            "       JOIN branch USING (branch_id)\n" + \
+            "       JOIN deployment_pipeline USING (branch_id)\n" + \
+            "      WHERE iteration_id = %s\n" + \
+            "  RETURNING release_id",
+            (iteration_id,),
+        )
+    except:
+        pass
+    release_ids = cursor.fetchall()
+    cursor.close()
+    return release_ids
 
 idem_make_service = idem_maker(
     'service',
@@ -149,11 +198,12 @@ idem_make_feature = idem_maker(
     'feature_id',
     ['feature_name', 'service_id'],
 )
+new_auto_deployment_pipeline = partial(new_deployment_pipeline, automatic=True)
 idem_make_branch = idem_maker(
     'branch',
     'branch_id',
     ['branch_name', 'feature_id'],
-    new_deployment_pipeline,
+    new_auto_deployment_pipeline,
 )
 idem_make_iteration = idem_maker(
     'iteration',

@@ -1,4 +1,5 @@
 import datetime
+import os
 import unittest
 from unittest.mock import (
     patch,
@@ -14,6 +15,7 @@ from factories import (
     idem_make_feature,
     idem_make_branch,
     idem_make_iteration,
+    idem_release_in_automatic_pipelines,
     new_deployment_pipeline,
     new_config,
     new_env,
@@ -23,6 +25,7 @@ class FactoryTestCase(unittest.TestCase):
     """ factories might create objects and relationships based on new info """
 
     def setUp(self):
+        os.environ['default_infrastructure_backend'] = 'mockdib'
         get_cursor_patcher = patch('factories.get_cursor')
         self.mock_get_cur = get_cursor_patcher.start()
         self.mock_rowcount = PropertyMock(return_value=0)
@@ -32,6 +35,44 @@ class FactoryTestCase(unittest.TestCase):
         del type(self.mock_get_cur.return_value).rowcount
         del self.mock_get_cur
         patch.stopall()
+
+    def test_idem_release_automatic_pipelines(self):
+        """
+        When an image is built, it's released in relevant automatic pipelines
+
+        When an iteration's image is built, herd-service releases that image in
+        all of that iteration's branch's automatic pipelines.
+
+        branch -> iteration ----------> release
+          |-----> deployment pipeline <----|
+
+        """
+
+        # run SUT
+        result = idem_release_in_automatic_pipelines(123)
+
+        # confirm that the insert sql was executed once
+        # SQL can do this whole operation so we should have it handle it.
+        self.mock_get_cur.return_value.execute.asert_called_once_with(
+            "INSERT INTO release (iteration_id, deployment_pipeline_id)\n" + \
+            "     SELECT iteration_id, deployment_pipeline_id\n" + \
+            "       FROM iteration\n" + \
+            "       JOIN branch USING (branch_id)\n" + \
+            "       JOIN deployment_pipeline USING (branch_id)\n" + \
+            "      WHERE iteration_id = %s",
+            (123,),
+        )
+
+        # confirm we closed the cursor
+        self.mock_get_cur.return_value.close.assert_called_once_with()
+
+        # the uniqueness constraint in the database is keeping us
+        # from inserting the same release twice. To ensure that this
+        # is idempotent I'm just confirming that it can be called
+        # again without blowing up and that it returns the same
+        # thing it did before.
+
+        self.assertEqual(idem_release_in_automatic_pipelines(123), result)
 
     def test_idem_make_service_new_case(self):
         """ Should make a service if it doesnt already exist """
@@ -45,7 +86,8 @@ class FactoryTestCase(unittest.TestCase):
 
         # confirm that reasonable sql was executed only once
         self.mock_get_cur.return_value.execute.assert_any_call(
-            "INSERT INTO service (service_name) VALUES (%s) RETURNING service_id",
+            "INSERT INTO service (service_name) " + \
+            "VALUES (%s) RETURNING service_id",
             ('mock-service-name',),
         )
 
@@ -131,7 +173,8 @@ class FactoryTestCase(unittest.TestCase):
 
         # confirm that reasonable sql was executed
         self.mock_get_cur.return_value.execute.assert_any_call(
-            "SELECT branch_id FROM branch WHERE branch_name=%s AND feature_id=%s",
+            "SELECT branch_id FROM branch " + \
+            "WHERE branch_name=%s AND feature_id=%s",
             ('mock-branch-name', 1),
         )
         self.mock_get_cur.return_value.execute.assert_any_call(
@@ -142,19 +185,24 @@ class FactoryTestCase(unittest.TestCase):
         )
 
         self.mock_get_cur.return_value.execute.assert_any_call(
-            "INSERT INTO config (key_value_pairs) VALUES (%s) RETURNING config_id",
+            "INSERT INTO config (key_value_pairs) " + \
+            "VALUES (%s) " + \
+            "RETURNING config_id",
             ('',),
         )
         self.mock_get_cur.return_value.execute.assert_any_call(
-            "INSERT INTO environment (settings) VALUES (%s) RETURNING environment_id",
-            ('',),
+            "INSERT INTO environment\n" + \
+            "(settings, infrastructure_backend, environment_name)\n" + \
+            "VALUES (%s, %s, %s)\n" + \
+            "RETURNING environment_id",
+            ('', 'mockdib', 'qa-sandbox'),
         )
         self.mock_get_cur.return_value.execute.assert_any_call(
             "INSERT INTO deployment_pipeline " + \
-            "(branch_id, config_id, environment_id) " \
-            "VALUES (%s, %s, %s) " + \
+            "(branch_id, config_id, environment_id, automatic) " \
+            "VALUES (%s, %s, %s, %s) " + \
             "RETURNING deployment_pipeline_id",
-            (199, 199, 199),
+            (199, 199, 199, True),
         )
 
         # confirm that we got back a good id
@@ -249,10 +297,10 @@ class FactoryTestCase(unittest.TestCase):
         # confirm reasonable sql was executed to make a pipeline
         self.mock_get_cur.return_value.execute.assert_called_once_with(
             "INSERT INTO deployment_pipeline " + \
-            "(branch_id, config_id, environment_id) " + \
-            "VALUES (%s, %s, %s) " + \
+            "(branch_id, config_id, environment_id, automatic) " + \
+            "VALUES (%s, %s, %s, %s) " + \
             "RETURNING deployment_pipeline_id",
-            (1, 5, 9),
+            (1, 5, 9, False),
         )
 
         # make sure we closed the cursor
@@ -313,8 +361,11 @@ class FactoryTestCase(unittest.TestCase):
 
         # confirm correct sql
         self.mock_get_cur.return_value.execute.assert_called_once_with(
-            "INSERT INTO environment (settings) VALUES (%s) RETURNING environment_id",
-            ('',),
+            "INSERT INTO environment\n" + \
+            "(settings, infrastructure_backend, environment_name)\n" + \
+            "VALUES (%s, %s, %s)\n" + \
+            "RETURNING environment_id",
+            ('', 'mockdib', 'qa-sandbox'),
         )
 
         # confirm that we got a reasonable id
@@ -328,6 +379,7 @@ class FactoryTestCase(unittest.TestCase):
             return_value = {
                 'environment_id': 101,
                 'settings': "mockKey=mockVal",
+                'infrastructure_backend': 'mock_backend',
             }
         )
         mock_get_env = get_env_patcher.start()
@@ -337,8 +389,11 @@ class FactoryTestCase(unittest.TestCase):
 
         # confirm correct sql was executed once
         self.mock_get_cur.return_value.execute.assert_called_once_with(
-            "INSERT INTO environment (settings) VALUES (%s) RETURNING environment_id",
-            ('mockKey=mockVal',)
+            "INSERT INTO environment\n" + \
+            "(settings, infrastructure_backend, environment_name)\n" + \
+            "VALUES (%s, %s, %s)\n" + \
+            "RETURNING environment_id",
+            ('mockKey=mockVal', 'mock_backend', 'qa-sandbox'),
         )
 
         # confirm that we got environment 57

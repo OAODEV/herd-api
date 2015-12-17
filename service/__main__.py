@@ -15,7 +15,10 @@ commit_path = "/commit/<{}>/<{}>/<{}>/<{}>".format(
     "branch_name",
     "commit_hash",
 )
-build_path = "/build/<commit_hash>/<image_name:re:[^\/]+\/?[^\/]+>"
+
+# regex   [^\/]+\/?                    [^\/]+     (\/?[^\/]+)?
+#         path followed by a slash     path       optional slash and path
+build_path = "/build/<commit_hash>/<image_name:re:[^\/]+\/?[^\/]+(\/?[^\/]+)?>"
 
 bottle.route(commit_path, ["GET"], restricted(handle_branch_commit))
 bottle.route(build_path, ["GET"], restricted(handle_build))

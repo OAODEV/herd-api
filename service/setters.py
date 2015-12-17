@@ -1,6 +1,5 @@
 from db import get_cursor
 
-
 def set_iteration(iteration_id, updates):
     """ Make updates to an iteration """
     cursor = get_cursor()
