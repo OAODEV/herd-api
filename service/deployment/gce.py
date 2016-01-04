@@ -78,6 +78,11 @@ def run_params(release_id):
     cursor.close()
     return result
 
+
+def service_identity(service_name, branch_name):
+    return "{}-{}".format(service_name, branch_name)
+
+
 def k8s_service_description(service_name, branch_name, port):
     """ return the k8s service description """
     k8s_name_match = re.search(
@@ -106,7 +111,7 @@ def k8s_service_description(service_name, branch_name, port):
         },
         "spec": {
             "selector": {
-                "service": "{}-{}-service".format(service_name, branch_name)
+                "service": service_identity(service_name, branch_name)
             },
             "ports": [
                 {
@@ -115,6 +120,7 @@ def k8s_service_description(service_name, branch_name, port):
             ],
         },
     }
+
 
 def k8s_secret_description(key_value_pairs,
                            service_name,
@@ -139,6 +145,7 @@ def k8s_secret_description(key_value_pairs,
         },
         "data": data,
     }
+
 
 def make_rc_name(branch_name, environment_name, commit_hash, config_id):
     """
@@ -188,7 +195,7 @@ def k8s_repcon_description(service_name,
         commit_hash,
         config_id
     )
-    service_identity = "{}-{}".format(service_name, branch_name)
+
     return {
         "kind": "ReplicationController",
         "apiVersion": "v1",
@@ -196,7 +203,7 @@ def k8s_repcon_description(service_name,
             "name": rc_name,
             "labels": {
                 "name": rc_name,
-                "service": service_identity,
+                "service": service_identity(service_name, branch_name),
             },
         },
         "spec": {
@@ -225,7 +232,7 @@ def k8s_repcon_description(service_name,
                     ],
                     "containers": [
                         {
-                            "name": service_identity,
+                            "name": service_identity(service_name, branch_name),
                             "image": image_name,
                             "ports": [
                                 {
@@ -246,12 +253,19 @@ def k8s_repcon_description(service_name,
         },
     }
 
-def idem_post(resource, description):
-    """ idempotently post a resource to k8s """
+
+def k8s_endpoint(resource):
+    """ return the endpoint for the given resource type """
     endpoint = "http://{}/api/v1/namespaces/default/{}".format(
         cfg('kubeproxy'),
         resource,
     )
+    return endpoint
+
+
+def idem_post(resource, description):
+    """ idempotently post a resource to k8s """
+    endpoint = k8s_endpoint(resource)
     print("posting {} request".format(endpoint))
     pp.pprint(description)
     response = requests.post(
@@ -264,13 +278,46 @@ def idem_post(resource, description):
     pp.pprint(response.text)
     return response
 
+
 def gc_repcons(service_name,
                branch_name,
                environment_name,
                commit_hash,
                config_id):
     """ delete all other repcons for this branch of this service """
-    pass
+    # get all repcons creating pods labeled for this service
+    # the repcon should be labeled with service=this_service_label
+    rc_name = make_rc_name(
+        branch_name,
+        environment_name,
+        commit_hash,
+        config_id,
+    )
+    selector = "service={}".format(service_identity(service_name, branch_name))
+    response = requests.get(
+        k8s_endpoint("replicationcontrollers"),
+        params={
+            "labelSelector": selector,
+        },
+    )
+    current_rc_name = make_rc_name(
+        branch_name,
+        environment_name,
+        commit_hash,
+        config_id,
+    )
+    delete_repcon_uris = []
+
+    # exclude the current repcon name
+    for item in response.json()['items']:
+        if item['metadata']['name'] != current_rc_name:
+            delete_repcon_uris.append(item['metadata']['selfLink'])
+
+    # delete the remaining repcons
+    for uri in delete_repcon_uris:
+        print("delete request to {}".format(uri))
+        requests.delete(uri)
+
 
 def update(param_set):
     """ create service, secret and repcon, then garbage collect old repcons """
@@ -326,9 +373,11 @@ def update(param_set):
         config_id
     )
 
+
 actions = {
     "UPDATE": update,
 }
+
 
 def runner(run_request):
     """ carry out the run request """

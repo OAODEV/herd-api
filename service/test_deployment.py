@@ -7,7 +7,11 @@ from unittest.mock import (
 import base64
 
 from deployment.gce import runner as gce_runner
-from deployment.gce import k8s_secret_description
+from deployment.gce import (
+    gc_repcons,
+    k8s_secret_description,
+    make_rc_name,
+)
 from deployment import (
     actions,
     run,
@@ -45,6 +49,61 @@ class RunTests(unittest.TestCase):
 
     def tearDown(self):
         patch.stopall()
+
+    def test_gc_repcons(self):
+        """ Should delete all but the given repcon for the service """
+        # set up
+        mock_return = MagicMock()
+        mock_return.json.return_value = {
+            'items': [
+                {
+                    'metadata': {
+                        'name': 'mockfirstname',
+                        'selfLink': 'mockfirstselflink',
+                    }
+                },
+                {
+                    'metadata': {
+                        'name': 'mocksecondname',
+                        'selfLink': 'mocksecondselflink',
+                    }
+                },
+                {
+                    'metadata': {
+                        'name': make_rc_name(
+                            'mock_branch_name',
+                            'mock_environment_name',
+                            'mock_commit_hash',
+                            'mock_config_id'
+                        ),
+                        'selfLink': 'mockmatchingselflink',
+                    }
+                },
+            ]
+        }
+        self.mock_requests.get.return_value = mock_return
+
+        # run SUT
+        gc_repcons(
+            'mock_service_name',
+            'mock_branch_name',
+            'mock_environment_name',
+            'mock_commit_hash',
+            'mock_config_id',
+        )
+
+        # confirm asumptions
+        # should have gotten the correctly labeled rcs
+        self.mock_requests.get.assert_any_call(
+            "http://mock8s-host/api/v1/namespaces/default/replicationcontrollers",
+            params={
+                "labelSelector": "service=mock_service_name-mock_branch_name",
+            },
+        )
+
+        # should have deleted what came back other than the current one
+        self.mock_requests.delete.assert_any_call('mockfirstselflink')
+        self.mock_requests.delete.assert_any_call('mocksecondselflink')
 
     def test_secret_description_handles_empty_string(self):
         """ creating a service with no key value pairs should not fail """
@@ -132,7 +191,7 @@ class RunTests(unittest.TestCase):
                         }
                     ],
                     "selector":{
-                        'service': 'mock-service-name-mock-branch-name-service',
+                        'service': 'mock-service-name-mock-branch-name',
                     },
                 },
             },
