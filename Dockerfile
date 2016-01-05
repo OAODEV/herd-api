@@ -1,4 +1,4 @@
-FROM us.gcr.io/lexical-cider-93918/bottlebase:2
+FROM us.gcr.io/lexical-cider-93918/basebottle:_build.0273acb
 MAINTAINER jesse.miller@adops.com
 
 # get swagger client
