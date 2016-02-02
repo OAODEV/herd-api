@@ -300,17 +300,11 @@ def gc_repcons(service_name,
             "labelSelector": selector,
         },
     )
-    current_rc_name = make_rc_name(
-        branch_name,
-        environment_name,
-        commit_hash,
-        config_id,
-    )
     delete_repcon_uris = []
 
     # exclude the current repcon name
     for item in response.json()['items']:
-        if item['metadata']['name'] != current_rc_name:
+        if item['metadata']['name'] != rc_name:
             delete_repcon_uris.append(item['metadata']['selfLink'])
 
     # delete the remaining repcons
