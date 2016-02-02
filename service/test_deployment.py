@@ -59,13 +59,13 @@ class RunTests(unittest.TestCase):
                 {
                     'metadata': {
                         'name': 'mockfirstname',
-                        'selfLink': 'mockfirstselflink',
+                        'selfLink': '/mockfirstselflink',
                     }
                 },
                 {
                     'metadata': {
                         'name': 'mocksecondname',
-                        'selfLink': 'mocksecondselflink',
+                        'selfLink': '/mocksecondselflink',
                     }
                 },
                 {
@@ -76,7 +76,7 @@ class RunTests(unittest.TestCase):
                             'mock_commit_hash',
                             'mock_config_id'
                         ),
-                        'selfLink': 'mockmatchingselflink',
+                        'selfLink': '/mockmatchingselflink',
                     }
                 },
             ]
@@ -102,8 +102,10 @@ class RunTests(unittest.TestCase):
         )
 
         # should have deleted what came back other than the current one
-        self.mock_requests.delete.assert_any_call('mockfirstselflink')
-        self.mock_requests.delete.assert_any_call('mocksecondselflink')
+        self.mock_requests.delete.assert_any_call(
+            'http://mock8s-host/mockfirstselflink')
+        self.mock_requests.delete.assert_any_call(
+            'http://mock8s-host/mocksecondselflink')
         self.assertEqual(len(self.mock_requests.delete.call_args_list), 2)
 
     def test_secret_description_handles_empty_string(self):

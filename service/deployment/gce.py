@@ -305,11 +305,16 @@ def gc_repcons(service_name,
     # exclude the current repcon name
     for item in response.json()['items']:
         if item['metadata']['name'] != rc_name:
-            delete_repcon_uris.append(item['metadata']['selfLink'])
+            delete_repcon_uris.append(
+                "http://{}{}".format(
+                    cfg("kubeproxy"),
+                    item['metadata']['selfLink']
+                )
+            )
 
     # delete the remaining repcons
     for uri in delete_repcon_uris:
-        print("delete request to {}".format(uri))
+        print("Delete request to {}".format(uri))
         requests.delete(uri)
 
 
