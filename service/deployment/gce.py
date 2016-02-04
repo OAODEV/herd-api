@@ -2,6 +2,7 @@ import base64
 import re
 import requests
 import pprint
+import json
 
 from functools import singledispatch
 from config_finder import cfg
