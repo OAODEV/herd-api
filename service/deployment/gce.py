@@ -331,11 +331,11 @@ def gc_repcons(service_name,
             headers={"Content-Type": "application/merge-patch+json"},
         )
         print(resp.json())
+
         # wait for the rc to scale to zero
-        watcher = requests.get(
-            "{}?timeoutSeconds=30".format(watch_uri(uri)),
-            stream=True
-        )
+        watchable_uri = "{}?timeoutSeconds=30".format(watch_uri(uri))
+        print("watching {}".format(watchable_uri)
+        watcher = requests.get(watchable_uri, stream=True)
         for message in watcher.iter_lines():
             print("\n\ngot message from watch")
             print(message)
