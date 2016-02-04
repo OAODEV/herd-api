@@ -334,7 +334,7 @@ def gc_repcons(service_name,
 
         # wait for the rc to scale to zero
         watchable_uri = "{}?timeoutSeconds=30".format(watch_uri(uri))
-        print("watching {}".format(watchable_uri)
+        print("watching {}".format(watchable_uri))
         watcher = requests.get(watchable_uri, stream=True)
         for message in watcher.iter_lines():
             print("\n\ngot message from watch")
