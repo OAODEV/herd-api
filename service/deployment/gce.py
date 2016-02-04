@@ -325,17 +325,22 @@ def gc_repcons(service_name,
     # scale to zero and delete the remaining repcons
     for uri in delete_repcon_uris:
         print("Scaling repcon at {} to zero".format(uri))
-        requests.patch(
+        resp = requests.patch(
             uri,
             data={"spec": {"replicas": 0}},
             headers={"Content-Type": "application/merge-patch+json"},
         )
+        print(resp)
         # wait for the rc to scale to zero
         watcher = requests.get(
             "{}?timeoutSeconds=30".format(watch_uri(uri)),
             stream=True
         )
         for message in watcher.iter_lines():
+            print("\n\ngot message from watch")
+            print(message)
+            if not message:
+                continue
             if json.loads(message)['object']['status']['replicas'] == 0:
                 watcher.close()
                 break
