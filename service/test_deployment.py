@@ -105,12 +105,12 @@ class RunTests(unittest.TestCase):
         # should have scaled down what came back to 0 other than the current one
         self.mock_requests.patch.assert_any_call(
             'http://mock8s-host/api/v1/mockfirstselflink',
-            data={"spec": {"replicas": 0}},
+            data='{"spec": {"replicas": 0}}',
             headers={"Content-Type": "application/merge-patch+json"},
         )
         self.mock_requests.patch.assert_any_call(
             'http://mock8s-host/api/v1/mocksecondselflink',
-            data={"spec": {"replicas": 0}},
+            data='{"spec": {"replicas": 0}}',
             headers={"Content-Type": "application/merge-patch+json"},
         )
         self.assertEqual(self.mock_requests.patch.call_count, 2)
