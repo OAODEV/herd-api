@@ -281,6 +281,14 @@ def idem_post(resource, description):
     return response
 
 
+def watch_uri(uri):
+    """ return a watch uri for a given k8s resource uri """
+    updated = uri.replace("/api/v1/", "/api/v1/watch/")
+    if updated == uri:
+        raise TypeError("uri ({}) doesn't look like a k8s resource".format(uri))
+    return updated
+
+
 def gc_repcons(service_name,
                branch_name,
                environment_name,
@@ -322,6 +330,15 @@ def gc_repcons(service_name,
             data={"spec": {"replicas": 0}},
             headers={"Content-Type": "application/merge-patch+json"},
         )
+        # wait for the rc to scale to zero
+        watcher = requests.get(
+            "{}?timeoutSeconds=30".format(watch_uri(uri)),
+            stream=True
+        )
+        for message in watcher.iter_lines():
+            if json.loads(message)['object']['status']['replicas'] == 0:
+                watcher.close()
+                break
         print("Delete request to {}".format(uri))
         requests.delete(uri)
 

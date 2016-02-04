@@ -11,6 +11,7 @@ from deployment.gce import (
     gc_repcons,
     k8s_secret_description,
     make_rc_name,
+    watch_uri
 )
 from deployment import (
     actions,
@@ -59,13 +60,13 @@ class RunTests(unittest.TestCase):
                 {
                     'metadata': {
                         'name': 'mockfirstname',
-                        'selfLink': '/mockfirstselflink',
+                        'selfLink': '/api/v1/mockfirstselflink',
                     }
                 },
                 {
                     'metadata': {
                         'name': 'mocksecondname',
-                        'selfLink': '/mocksecondselflink',
+                        'selfLink': '/api/v1/mocksecondselflink',
                     }
                 },
                 {
@@ -76,7 +77,7 @@ class RunTests(unittest.TestCase):
                             'mock_commit_hash',
                             'mock_config_id'
                         ),
-                        'selfLink': '/mockmatchingselflink',
+                        'selfLink': '/api/v1/mockmatchingselflink',
                     }
                 },
             ]
@@ -103,12 +104,12 @@ class RunTests(unittest.TestCase):
 
         # should have scaled down what came back to 0 other than the current one
         self.mock_requests.patch.assert_any_call(
-            'http://mock8s-host/mockfirstselflink',
+            'http://mock8s-host/api/v1/mockfirstselflink',
             data={"spec": {"replicas": 0}},
             headers={"Content-Type": "application/merge-patch+json"},
         )
         self.mock_requests.patch.assert_any_call(
-            'http://mock8s-host/mocksecondselflink',
+            'http://mock8s-host/api/v1/mocksecondselflink',
             data={"spec": {"replicas": 0}},
             headers={"Content-Type": "application/merge-patch+json"},
         )
@@ -116,9 +117,9 @@ class RunTests(unittest.TestCase):
 
         # should have deleted what came back other than the current one
         self.mock_requests.delete.assert_any_call(
-            'http://mock8s-host/mockfirstselflink')
+            'http://mock8s-host/api/v1/mockfirstselflink')
         self.mock_requests.delete.assert_any_call(
-            'http://mock8s-host/mocksecondselflink')
+            'http://mock8s-host/api/v1/mocksecondselflink')
         self.assertEqual(self.mock_requests.delete.call_count, 2)
 
     def test_secret_description_handles_empty_string(self):
@@ -147,6 +148,24 @@ class RunTests(unittest.TestCase):
         rc = k8s_repcon_description('s', 'b', 123, 'e', 'c', 'i', '')
 
         # confirm
+
+    def test_watch_uri(self):
+        """ given a k8s resource uri, return a watch uri for that resource """
+        self.assertEqual(
+            watch_uri("/api/v1/replicationcontrollers"),
+            "/api/v1/watch/replicationcontrollers",
+        )
+        self.assertEqual(
+            watch_uri("http://localhost:8001/api/v1/any/thing/else?a=b"),
+            "http://localhost:8001/api/v1/watch/any/thing/else?a=b",
+        )
+
+        with self.assertRaises(TypeError):
+            watch_uri("http://www.google.com")
+        with self.assertRaises(TypeError):
+            watch_uri("http://www.google.com/api/v2/anything")
+        with self.assertRaises(TypeError):
+            watch_uri("http://www.google.com/notapi/v1/anything")
 
     def test_gce_runner_infrastructure_match(self):
         """
