@@ -196,6 +196,8 @@ def k8s_repcon_description(service_name,
         config_id
     )
 
+    service_label = service_identity(service_name, branch_name)
+
     return {
         "kind": "ReplicationController",
         "apiVersion": "v1",
@@ -203,7 +205,7 @@ def k8s_repcon_description(service_name,
             "name": rc_name,
             "labels": {
                 "name": rc_name,
-                "service": service_identity(service_name, branch_name),
+                "service": service_label,
             },
         },
         "spec": {
@@ -232,7 +234,7 @@ def k8s_repcon_description(service_name,
                     ],
                     "containers": [
                         {
-                            "name": service_identity(service_name, branch_name),
+                            "name": service_label,
                             "image": image_name,
                             "ports": [
                                 {
@@ -312,8 +314,14 @@ def gc_repcons(service_name,
                 )
             )
 
-    # delete the remaining repcons
+    # scale to zero and delete the remaining repcons
     for uri in delete_repcon_uris:
+        print("Scaling repcon at {} to zero".format(uri))
+        requests.patch(
+            uri,
+            data={"spec": {"replicas": 0}},
+            headers={"Content-Type": "application/merge-patch+json"},
+        )
         print("Delete request to {}".format(uri))
         requests.delete(uri)
 

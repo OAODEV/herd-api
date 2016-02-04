@@ -101,12 +101,25 @@ class RunTests(unittest.TestCase):
             },
         )
 
+        # should have scaled down what came back to 0 other than the current one
+        self.mock_requests.patch.assert_any_call(
+            'http://mock8s-host/mockfirstselflink',
+            data={"spec": {"replicas": 0}},
+            headers={"Content-Type": "application/merge-patch+json"},
+        )
+        self.mock_requests.patch.assert_any_call(
+            'http://mock8s-host/mocksecondselflink',
+            data={"spec": {"replicas": 0}},
+            headers={"Content-Type": "application/merge-patch+json"},
+        )
+        self.assertEqual(self.mock_requests.patch.call_count, 2)
+
         # should have deleted what came back other than the current one
         self.mock_requests.delete.assert_any_call(
             'http://mock8s-host/mockfirstselflink')
         self.mock_requests.delete.assert_any_call(
             'http://mock8s-host/mocksecondselflink')
-        self.assertEqual(len(self.mock_requests.delete.call_args_list), 2)
+        self.assertEqual(self.mock_requests.delete.call_count, 2)
 
     def test_secret_description_handles_empty_string(self):
         """ creating a service with no key value pairs should not fail """
