@@ -80,7 +80,8 @@ class RunTests(unittest.TestCase):
                         'selfLink': '/api/v1/mockmatchingselflink',
                     }
                 },
-            ]
+            ],
+            "status": {"replicas": 0},
         }
         self.mock_requests.get.return_value = mock_return
 

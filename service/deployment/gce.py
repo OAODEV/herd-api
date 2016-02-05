@@ -3,6 +3,7 @@ import re
 import requests
 import pprint
 import json
+import time
 
 from functools import singledispatch
 from config_finder import cfg
@@ -291,12 +292,6 @@ def watch_uri(uri):
 
 def sync_scale(uri, scale_to, timeout=30):
     """ scale an rc and wait til it's done """
-    watchable_uri = watch_uri(uri)
-    if timeout:
-        watchable_uri += "?timeoutSeconds={}".format(timeout)
-    print("watching {}".format(watchable_uri))
-    watcher = requests.get(watchable_uri, stream=True)
-    print(watcher)
     resp = requests.patch(
         uri,
         data=json.dumps({"spec": {"replicas": scale_to}}),
@@ -305,17 +300,12 @@ def sync_scale(uri, scale_to, timeout=30):
     print(resp.json())
 
     # wait for the rc to scale to zero
-    for m in watcher.iter_lines():
-        print(m)
-        if not m:
-            continue
-        print("\n\ngot message from watch")
-        print(m)
-        print(json.loads(m.decode())['object']['status']['replicas'] == scale_to)
-        if json.loads(m.decode())['object']['status']['replicas'] == scale_to:
-            print("Scaled to {}".format(scale_to))
-            watcher.close()
+    for s in range(5):
+        resp = requests.get(uri).json()
+        if resp['status']['replicas'] == scale_to:
             break
+        else:
+            time.sleep(s)
 
 def gc_repcons(service_name,
                branch_name,
