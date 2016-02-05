@@ -289,6 +289,32 @@ def watch_uri(uri):
         raise TypeError("uri ({}) doesn't look like a k8s resource".format(uri))
     return updated
 
+def sync_scale(uri, scale_to, timeout=30):
+    """ scale an rc and wait til it's done """
+    resp = requests.patch(
+        uri,
+        data=json.dumps({"spec": {"replicas": scale_to}}),
+        headers={"Content-Type": "application/merge-patch+json"},
+    )
+    print(resp.json())
+
+    # wait for the rc to scale to zero
+    watchable_uri = watch_uri(uri)
+    if timeout:
+        watchable_uri += "?timeoutSeconds={}".format(timeout)
+    print("watching {}".format(watchable_uri))
+    watcher = requests.get(watchable_uri, stream=True)
+    for m in watcher.iter_lines():
+        if not m:
+            continue
+        print("\n\ngot message from watch")
+        print(m)
+        import pdb; pdb.set_trace()
+        print(json.loads(m.decode())['object']['status']['replicas'] == scale_to)
+        if json.loads(m.decode())['object']['status']['replicas'] == scale_to:
+            print("Scaled to {}".format(scale_to))
+            watcher.close()
+            break
 
 def gc_repcons(service_name,
                branch_name,
@@ -326,25 +352,7 @@ def gc_repcons(service_name,
     # scale to zero and delete the remaining repcons
     for uri in delete_repcon_uris:
         print("Scaling repcon at {} to zero".format(uri))
-        resp = requests.patch(
-            uri,
-            data='{"spec": {"replicas": 0}}',
-            headers={"Content-Type": "application/merge-patch+json"},
-        )
-        print(resp.json())
-
-        # wait for the rc to scale to zero
-        watchable_uri = "{}?timeoutSeconds=30".format(watch_uri(uri))
-        print("watching {}".format(watchable_uri))
-        watcher = requests.get(watchable_uri, stream=True)
-        for message in watcher.iter_lines():
-            print("\n\ngot message from watch")
-            print(message)
-            if not message:
-                continue
-            if json.loads(message)['object']['status']['replicas'] == 0:
-                watcher.close()
-                break
+        sync_scale(uri, 0)
         print("Delete request to {}".format(uri))
         requests.delete(uri)
 
