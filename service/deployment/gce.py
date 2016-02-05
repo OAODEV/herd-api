@@ -311,7 +311,6 @@ def sync_scale(uri, scale_to, timeout=30):
             continue
         print("\n\ngot message from watch")
         print(m)
-        import pdb; pdb.set_trace()
         print(json.loads(m.decode())['object']['status']['replicas'] == scale_to)
         if json.loads(m.decode())['object']['status']['replicas'] == scale_to:
             print("Scaled to {}".format(scale_to))
