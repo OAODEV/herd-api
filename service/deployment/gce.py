@@ -291,19 +291,19 @@ def watch_uri(uri):
 
 def sync_scale(uri, scale_to, timeout=30):
     """ scale an rc and wait til it's done """
-
+    watchable_uri = watch_uri(uri)
     if timeout:
         watchable_uri += "?timeoutSeconds={}".format(timeout)
     print("watching {}".format(watchable_uri))
     watcher = requests.get(watchable_uri, stream=True)
     print(watcher)
-    print("scaling to", scale_to)
     resp = requests.patch(
         uri,
         data=json.dumps({"spec": {"replicas": scale_to}}),
         headers={"Content-Type": "application/merge-patch+json"},
     )
     print(resp.json())
+
     # wait for the rc to scale to zero
     for m in watcher.iter_lines():
         print(m)
