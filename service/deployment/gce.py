@@ -304,7 +304,9 @@ def sync_scale(uri, scale_to, timeout=30):
         watchable_uri += "?timeoutSeconds={}".format(timeout)
     print("watching {}".format(watchable_uri))
     watcher = requests.get(watchable_uri, stream=True)
+    print(watcher)
     for m in watcher.iter_lines():
+        print(m)
         if not m:
             continue
         print("\n\ngot message from watch")
