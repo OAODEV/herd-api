@@ -150,7 +150,14 @@ def k8s_secret_description(key_value_pairs, config_id):
     print("creating secret with pairs '{}'".format(key_value_pairs))
     data = {}
     for line in [l for l in key_value_pairs.strip().split('\n') if l]:
-        key, value = line.split('=')
+        try:
+            key, value = line.split('=')
+        except Exception as e:
+            print("Could not parse line {} in config {}".format(
+                line,
+                key_value_pairs,
+            ))
+            raise e
         data[key] = b64(value)
 
     return {
