@@ -303,7 +303,7 @@ class RunTests(unittest.TestCase):
                                         {
                                             "name": repcon_name + "-secret",
                                             "readOnly": True,
-                                            "mountPath": "/var/secret/env"
+                                            "mountPath": "/secret"
                                         }
                                     ],
                                 },
