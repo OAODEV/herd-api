@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import re
 import requests
 import pprint
@@ -43,6 +44,26 @@ b64.register(bytes)(base64.b64encode)
 @b64.register(str)
 def _(s):
     return base64.b64encode(s.encode()).decode()
+
+"""
+Let's also make some helper functions for hashing that do
+someting similar. I always want a hexdigest, but it should
+accept strings or bytes
+
+"""
+
+@singledispatch
+def digest(data):
+    raise TypeError("expecting str or bytes, got {}, {}".format(
+        data, type(data)))
+
+@digest.register(str)
+def _(s):
+    return hashlib.sha256(s.encode()).hexdigest()
+
+@digest.register(bytes)
+def _(b):
+    return hashlib.sha256(b).hexdigest()
 
 def run_params(release_id):
     """ return the paramaters needed for a run on gce """
@@ -136,10 +157,7 @@ def k8s_secret_description(key_value_pairs, config_id):
         "kind": "Secret",
         "apiVersion": "v1",
         "metadata": {
-            "name": "{}-config-{}".format(
-                hashlib.sha256(key_value_pairs.encode()).hexdigest()
-                config_id,
-            )
+            "name": "{}-config-{}".format(digest(key_value_pairs), config_id)
         },
         "data": data,
     }
@@ -185,7 +203,9 @@ def k8s_repcon_description(service_name,
                            environment_name,
                            commit_hash,
                            image_name,
-                           settings):
+                           settings,
+                           key_value_pairs,
+):
     """ return the k8s replication controller description """
     rc_name = make_rc_name(
         branch_name,
@@ -222,9 +242,8 @@ def k8s_repcon_description(service_name,
                         {
                             "name": "{}-secret".format(rc_name),
                             "secret": {
-                                "secretName": "{}-{}-config-{}".format(
-                                    service_name,
-                                    branch_name,
+                                "secretName": "{}-config-{}".format(
+                                    digest(key_value_pairs),
                                     config_id,
                                 ),
                             },
@@ -367,15 +386,7 @@ def update(param_set):
         k8s_service_description(service_name, branch_name, 8000),
     )
 
-    idem_post(
-        "secrets",
-        k8s_secret_description(
-            key_value_pairs,
-            service_name,
-            branch_name,
-            config_id
-        ),
-    )
+    idem_post("secrets", k8s_secret_description(key_value_pairs, config_id))
 
     idem_post(
         "replicationcontrollers",
@@ -386,7 +397,8 @@ def update(param_set):
             environment_name,
             commit_hash,
             image_name,
-            settings
+            settings,
+            key_value_pairs,
         )
     )
 
@@ -395,7 +407,7 @@ def update(param_set):
         branch_name,
         environment_name,
         commit_hash,
-        config_id
+        config_id,
     )
 
 

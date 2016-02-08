@@ -6,7 +6,6 @@ from unittest.mock import (
     MagicMock,
 )
 import base64
-
 from deployment.gce import runner as gce_runner
 from deployment.gce import (
     gc_repcons,
@@ -134,7 +133,7 @@ class RunTests(unittest.TestCase):
             'kind': 'Secret',
             'apiVersion': 'v1',
             'metadata': {
-                'name': '{}-config-123'.format(hashlib.sha256(b'').hexdigest(),
+                'name': '{}-config-123'.format(hashlib.sha256(b'').hexdigest()),
             },
             'data': {},
         })
@@ -236,7 +235,9 @@ class RunTests(unittest.TestCase):
             auth=('admin', 'mock8s-admin-pass'),
         )
 
-        secret_name = "mock-service-name-mock-branch-name-config-789"
+        secret_name = "{}-config-789".format(
+            hashlib.sha256(b'mock-key=mock-value\nmk=mv\n').hexdigest()
+        )
 
         # should have created a secret in k8s
         self.mock_requests.post.assert_any_call(
