@@ -124,10 +124,7 @@ def k8s_service_description(service_name, branch_name, port):
     }
 
 
-def k8s_secret_description(key_value_pairs,
-                           service_name,
-                           branch_name,
-                           config_id):
+def k8s_secret_description(key_value_pairs, config_id):
     """ return the k8s secret description """
     print("creating secret with pairs '{}'".format(key_value_pairs))
     data = {}
@@ -139,9 +136,8 @@ def k8s_secret_description(key_value_pairs,
         "kind": "Secret",
         "apiVersion": "v1",
         "metadata": {
-            "name": "{}-{}-config-{}".format(
-                service_name,
-                branch_name,
+            "name": "{}-config-{}".format(
+                hashlib.sha256(key_value_pairs.encode()).hexdigest()
                 config_id,
             )
         },

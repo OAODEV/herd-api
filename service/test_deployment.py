@@ -1,3 +1,4 @@
+import hashlib
 import os
 import unittest
 from unittest.mock import (
@@ -126,14 +127,14 @@ class RunTests(unittest.TestCase):
     def test_secret_description_handles_empty_string(self):
         """ creating a service with no key value pairs should not fail """
         # run SUT
-        secret = k8s_secret_description('', 'sname', 'bname', 123)
+        secret = k8s_secret_description('', 123)
 
         # confirm
         self.assertEqual(secret, {
             'kind': 'Secret',
             'apiVersion': 'v1',
             'metadata': {
-                'name': 'sname-bname-config-123',
+                'name': '{}-config-123'.format(hashlib.sha256(b'').hexdigest(),
             },
             'data': {},
         })
