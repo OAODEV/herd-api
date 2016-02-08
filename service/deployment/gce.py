@@ -247,7 +247,7 @@ def k8s_repcon_description(service_name,
                                 {
                                     "name": "{}-secret".format(rc_name),
                                     "readOnly": True,
-                                    "mountPath": "/var/secret/env",
+                                    "mountPath": "/secret",
                                 }
                             ]
                         },
