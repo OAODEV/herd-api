@@ -1,7 +1,10 @@
 import base64
+import hashlib
 import re
 import requests
 import pprint
+import json
+import time
 
 from functools import singledispatch
 from config_finder import cfg
@@ -42,6 +45,26 @@ b64.register(bytes)(base64.b64encode)
 def _(s):
     return base64.b64encode(s.encode()).decode()
 
+"""
+Let's also make some helper functions for hashing that do
+someting similar. I always want a hexdigest, but it should
+accept strings or bytes
+
+"""
+
+@singledispatch
+def digest(data):
+    raise TypeError("expecting str or bytes, got {}, {}".format(
+        data, type(data)))
+
+@digest.register(str)
+def _(s):
+    return hashlib.sha256(s.encode()).hexdigest()
+
+@digest.register(bytes)
+def _(b):
+    return hashlib.sha256(b).hexdigest()
+
 def run_params(release_id):
     """ return the paramaters needed for a run on gce """
     cursor = get_cursor()
@@ -78,6 +101,11 @@ def run_params(release_id):
     cursor.close()
     return result
 
+
+def service_identity(service_name, branch_name):
+    return "{}-{}".format(service_name, branch_name)
+
+
 def k8s_service_description(service_name, branch_name, port):
     """ return the k8s service description """
     k8s_name_match = re.search(
@@ -106,7 +134,7 @@ def k8s_service_description(service_name, branch_name, port):
         },
         "spec": {
             "selector": {
-                "service": "{}-{}-service".format(service_name, branch_name)
+                "service": service_identity(service_name, branch_name)
             },
             "ports": [
                 {
@@ -116,29 +144,31 @@ def k8s_service_description(service_name, branch_name, port):
         },
     }
 
-def k8s_secret_description(key_value_pairs,
-                           service_name,
-                           branch_name,
-                           config_id):
+
+def k8s_secret_description(key_value_pairs, config_id):
     """ return the k8s secret description """
     print("creating secret with pairs '{}'".format(key_value_pairs))
     data = {}
     for line in [l for l in key_value_pairs.strip().split('\n') if l]:
-        key, value = line.split('=')
+        try:
+            key, value = line.split('=')
+        except Exception as e:
+            print("Could not parse line {} in config {}".format(
+                line,
+                key_value_pairs,
+            ))
+            raise e
         data[key] = b64(value)
 
     return {
         "kind": "Secret",
         "apiVersion": "v1",
         "metadata": {
-            "name": "{}-{}-config-{}".format(
-                service_name,
-                branch_name,
-                config_id,
-            )
+            "name": "{}-config-{}".format(digest(key_value_pairs), config_id)
         },
         "data": data,
     }
+
 
 def make_rc_name(branch_name, environment_name, commit_hash, config_id):
     """
@@ -180,7 +210,9 @@ def k8s_repcon_description(service_name,
                            environment_name,
                            commit_hash,
                            image_name,
-                           settings):
+                           settings,
+                           key_value_pairs,
+):
     """ return the k8s replication controller description """
     rc_name = make_rc_name(
         branch_name,
@@ -188,7 +220,9 @@ def k8s_repcon_description(service_name,
         commit_hash,
         config_id
     )
-    service_identity = "{}-{}".format(service_name, branch_name)
+
+    service_label = service_identity(service_name, branch_name)
+
     return {
         "kind": "ReplicationController",
         "apiVersion": "v1",
@@ -196,7 +230,7 @@ def k8s_repcon_description(service_name,
             "name": rc_name,
             "labels": {
                 "name": rc_name,
-                "service": service_identity,
+                "service": service_label,
             },
         },
         "spec": {
@@ -215,9 +249,8 @@ def k8s_repcon_description(service_name,
                         {
                             "name": "{}-secret".format(rc_name),
                             "secret": {
-                                "secretName": "{}-{}-config-{}".format(
-                                    service_name,
-                                    branch_name,
+                                "secretName": "{}-config-{}".format(
+                                    digest(key_value_pairs),
                                     config_id,
                                 ),
                             },
@@ -225,7 +258,7 @@ def k8s_repcon_description(service_name,
                     ],
                     "containers": [
                         {
-                            "name": service_identity,
+                            "name": service_label,
                             "image": image_name,
                             "ports": [
                                 {
@@ -236,7 +269,7 @@ def k8s_repcon_description(service_name,
                                 {
                                     "name": "{}-secret".format(rc_name),
                                     "readOnly": True,
-                                    "mountPath": "/var/secret/env",
+                                    "mountPath": "/secret",
                                 }
                             ]
                         },
@@ -246,12 +279,19 @@ def k8s_repcon_description(service_name,
         },
     }
 
-def idem_post(resource, description):
-    """ idempotently post a resource to k8s """
+
+def k8s_endpoint(resource):
+    """ return the endpoint for the given resource type """
     endpoint = "http://{}/api/v1/namespaces/default/{}".format(
         cfg('kubeproxy'),
         resource,
     )
+    return endpoint
+
+
+def idem_post(resource, description):
+    """ idempotently post a resource to k8s """
+    endpoint = k8s_endpoint(resource)
     print("posting {} request".format(endpoint))
     pp.pprint(description)
     response = requests.post(
@@ -264,13 +304,71 @@ def idem_post(resource, description):
     pp.pprint(response.text)
     return response
 
+
+def watch_uri(uri):
+    """ return a watch uri for a given k8s resource uri """
+    updated = uri.replace("/api/v1/", "/api/v1/watch/")
+    if updated == uri:
+        raise TypeError("uri ({}) doesn't look like a k8s resource".format(uri))
+    return updated
+
+def sync_scale(uri, scale_to, timeout=30):
+    """ scale an rc and wait til it's done """
+    resp = requests.patch(
+        uri,
+        data=json.dumps({"spec": {"replicas": scale_to}}),
+        headers={"Content-Type": "application/merge-patch+json"},
+    )
+    print(resp.json())
+
+    # wait for the rc to scale to zero
+    for s in range(5):
+        resp = requests.get(uri).json()
+        if resp['status']['replicas'] == scale_to:
+            break
+        else:
+            time.sleep(s)
+
 def gc_repcons(service_name,
                branch_name,
                environment_name,
                commit_hash,
                config_id):
     """ delete all other repcons for this branch of this service """
-    pass
+    # get all repcons creating pods labeled for this service
+    # the repcon should be labeled with service=this_service_label
+    rc_name = make_rc_name(
+        branch_name,
+        environment_name,
+        commit_hash,
+        config_id,
+    )
+    selector = "service={}".format(service_identity(service_name, branch_name))
+    response = requests.get(
+        k8s_endpoint("replicationcontrollers"),
+        params={
+            "labelSelector": selector,
+        },
+    )
+    delete_repcon_uris = []
+
+    # exclude the current repcon name
+    for item in response.json()['items']:
+        if item['metadata']['name'] != rc_name:
+            delete_repcon_uris.append(
+                "http://{}{}".format(
+                    cfg("kubeproxy"),
+                    item['metadata']['selfLink']
+                )
+            )
+
+    # scale to zero and delete the remaining repcons
+    for uri in delete_repcon_uris:
+        print("Scaling repcon at {} to zero".format(uri))
+        sync_scale(uri, 0)
+        print("Delete request to {}".format(uri))
+        requests.delete(uri)
+
 
 def update(param_set):
     """ create service, secret and repcon, then garbage collect old repcons """
@@ -295,15 +393,7 @@ def update(param_set):
         k8s_service_description(service_name, branch_name, 8000),
     )
 
-    idem_post(
-        "secrets",
-        k8s_secret_description(
-            key_value_pairs,
-            service_name,
-            branch_name,
-            config_id
-        ),
-    )
+    idem_post("secrets", k8s_secret_description(key_value_pairs, config_id))
 
     idem_post(
         "replicationcontrollers",
@@ -314,7 +404,8 @@ def update(param_set):
             environment_name,
             commit_hash,
             image_name,
-            settings
+            settings,
+            key_value_pairs,
         )
     )
 
@@ -323,12 +414,14 @@ def update(param_set):
         branch_name,
         environment_name,
         commit_hash,
-        config_id
+        config_id,
     )
+
 
 actions = {
     "UPDATE": update,
 }
+
 
 def runner(run_request):
     """ carry out the run request """

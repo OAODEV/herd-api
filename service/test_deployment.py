@@ -1,3 +1,4 @@
+import hashlib
 import os
 import unittest
 from unittest.mock import (
@@ -5,9 +6,13 @@ from unittest.mock import (
     MagicMock,
 )
 import base64
-
 from deployment.gce import runner as gce_runner
-from deployment.gce import k8s_secret_description
+from deployment.gce import (
+    gc_repcons,
+    k8s_secret_description,
+    make_rc_name,
+    watch_uri
+)
 from deployment import (
     actions,
     run,
@@ -46,17 +51,89 @@ class RunTests(unittest.TestCase):
     def tearDown(self):
         patch.stopall()
 
+    def test_gc_repcons(self):
+        """ Should delete all but the given repcon for the service """
+        # set up
+        mock_return = MagicMock()
+        mock_return.json.return_value = {
+            'items': [
+                {
+                    'metadata': {
+                        'name': 'mockfirstname',
+                        'selfLink': '/api/v1/mockfirstselflink',
+                    }
+                },
+                {
+                    'metadata': {
+                        'name': 'mocksecondname',
+                        'selfLink': '/api/v1/mocksecondselflink',
+                    }
+                },
+                {
+                    'metadata': {
+                        'name': make_rc_name(
+                            'mock_branch_name',
+                            'mock_environment_name',
+                            'mock_commit_hash',
+                            'mock_config_id'
+                        ),
+                        'selfLink': '/api/v1/mockmatchingselflink',
+                    }
+                },
+            ],
+            "status": {"replicas": 0},
+        }
+        self.mock_requests.get.return_value = mock_return
+
+        # run SUT
+        gc_repcons(
+            'mock_service_name',
+            'mock_branch_name',
+            'mock_environment_name',
+            'mock_commit_hash',
+            'mock_config_id',
+        )
+
+        # confirm asumptions
+        # should have gotten the correctly labeled rcs
+        self.mock_requests.get.assert_any_call(
+            "http://mock8s-host/api/v1/namespaces/default/replicationcontrollers",
+            params={
+                "labelSelector": "service=mock_service_name-mock_branch_name",
+            },
+        )
+
+        # should have scaled down what came back to 0 other than the current one
+        self.mock_requests.patch.assert_any_call(
+            'http://mock8s-host/api/v1/mockfirstselflink',
+            data='{"spec": {"replicas": 0}}',
+            headers={"Content-Type": "application/merge-patch+json"},
+        )
+        self.mock_requests.patch.assert_any_call(
+            'http://mock8s-host/api/v1/mocksecondselflink',
+            data='{"spec": {"replicas": 0}}',
+            headers={"Content-Type": "application/merge-patch+json"},
+        )
+        self.assertEqual(self.mock_requests.patch.call_count, 2)
+
+        # should have deleted what came back other than the current one
+        self.mock_requests.delete.assert_any_call(
+            'http://mock8s-host/api/v1/mockfirstselflink')
+        self.mock_requests.delete.assert_any_call(
+            'http://mock8s-host/api/v1/mocksecondselflink')
+        self.assertEqual(self.mock_requests.delete.call_count, 2)
+
     def test_secret_description_handles_empty_string(self):
         """ creating a service with no key value pairs should not fail """
         # run SUT
-        secret = k8s_secret_description('', 'sname', 'bname', 123)
+        secret = k8s_secret_description('', 123)
 
         # confirm
         self.assertEqual(secret, {
             'kind': 'Secret',
             'apiVersion': 'v1',
             'metadata': {
-                'name': 'sname-bname-config-123',
+                'name': '{}-config-123'.format(hashlib.sha256(b'').hexdigest()),
             },
             'data': {},
         })
@@ -72,6 +149,24 @@ class RunTests(unittest.TestCase):
         rc = k8s_repcon_description('s', 'b', 123, 'e', 'c', 'i', '')
 
         # confirm
+
+    def test_watch_uri(self):
+        """ given a k8s resource uri, return a watch uri for that resource """
+        self.assertEqual(
+            watch_uri("/api/v1/replicationcontrollers"),
+            "/api/v1/watch/replicationcontrollers",
+        )
+        self.assertEqual(
+            watch_uri("http://localhost:8001/api/v1/any/thing/else?a=b"),
+            "http://localhost:8001/api/v1/watch/any/thing/else?a=b",
+        )
+
+        with self.assertRaises(TypeError):
+            watch_uri("http://www.google.com")
+        with self.assertRaises(TypeError):
+            watch_uri("http://www.google.com/api/v2/anything")
+        with self.assertRaises(TypeError):
+            watch_uri("http://www.google.com/notapi/v1/anything")
 
     def test_gce_runner_infrastructure_match(self):
         """
@@ -132,7 +227,7 @@ class RunTests(unittest.TestCase):
                         }
                     ],
                     "selector":{
-                        'service': 'mock-service-name-mock-branch-name-service',
+                        'service': 'mock-service-name-mock-branch-name',
                     },
                 },
             },
@@ -140,7 +235,9 @@ class RunTests(unittest.TestCase):
             auth=('admin', 'mock8s-admin-pass'),
         )
 
-        secret_name = "mock-service-name-mock-branch-name-config-789"
+        secret_name = "{}-config-789".format(
+            hashlib.sha256(b'mock-key=mock-value\nmk=mv\n').hexdigest()
+        )
 
         # should have created a secret in k8s
         self.mock_requests.post.assert_any_call(
@@ -208,7 +305,7 @@ class RunTests(unittest.TestCase):
                                         {
                                             "name": repcon_name + "-secret",
                                             "readOnly": True,
-                                            "mountPath": "/var/secret/env"
+                                            "mountPath": "/secret"
                                         }
                                     ],
                                 },
