@@ -357,14 +357,17 @@ def gc_repcons(service_name,
 
     # we are deleting all repcons for this branch in order to get settings updates
     # until we refactor to the simpler data model.
-#    for item in response.json()['items']:
+    for item in response.json()['items']:
+
+        # dont' exclude anything
 #        if item['metadata']['name'] != rc_name:
-#            delete_repcon_uris.append(
-#                "http://{}{}".format(
-#                    cfg("kubeproxy"),
-#                    item['metadata']['selfLink']
-#                )
-#            )
+
+        delete_repcon_uris.append(
+            "http://{}{}".format(
+                cfg("kubeproxy"),
+                item['metadata']['selfLink']
+            )
+        )
 
     # scale to zero and delete the remaining repcons
     for uri in delete_repcon_uris:

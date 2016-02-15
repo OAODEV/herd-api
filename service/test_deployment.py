@@ -114,14 +114,18 @@ class RunTests(unittest.TestCase):
             data='{"spec": {"replicas": 0}}',
             headers={"Content-Type": "application/merge-patch+json"},
         )
-        self.assertEqual(self.mock_requests.patch.call_count, 2)
+        # actually now that we are just deleting all of the repcons (to get
+        # updated config), we want to see 3 here.
+        self.assertEqual(self.mock_requests.patch.call_count, 3)
 
         # should have deleted what came back other than the current one
         self.mock_requests.delete.assert_any_call(
             'http://mock8s-host/api/v1/mockfirstselflink')
         self.mock_requests.delete.assert_any_call(
             'http://mock8s-host/api/v1/mocksecondselflink')
-        self.assertEqual(self.mock_requests.delete.call_count, 2)
+        # actually now that we are just deleting all of the repcons (to get
+        # updated config), we want to see 3 here.
+        self.assertEqual(self.mock_requests.delete.call_count, 3)
 
     def test_secret_description_handles_empty_string(self):
         """ creating a service with no key value pairs should not fail """
