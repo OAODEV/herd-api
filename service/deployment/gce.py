@@ -352,15 +352,22 @@ def gc_repcons(service_name,
     )
     delete_repcon_uris = []
 
-    # exclude the current repcon name
+    # normally we would exclude the current repcon name, except that
+    # we want to start fresh and update in case there is new config.
+
+    # we are deleting all repcons for this branch in order to get settings updates
+    # until we refactor to the simpler data model.
     for item in response.json()['items']:
-        if item['metadata']['name'] != rc_name:
-            delete_repcon_uris.append(
-                "http://{}{}".format(
-                    cfg("kubeproxy"),
-                    item['metadata']['selfLink']
-                )
+
+        # dont' exclude anything
+#        if item['metadata']['name'] != rc_name:
+
+        delete_repcon_uris.append(
+            "http://{}{}".format(
+                cfg("kubeproxy"),
+                item['metadata']['selfLink']
             )
+        )
 
     # scale to zero and delete the remaining repcons
     for uri in delete_repcon_uris:
@@ -395,6 +402,19 @@ def update(param_set):
 
     idem_post("secrets", k8s_secret_description(key_value_pairs, config_id))
 
+    # here we delete all repcons for this branch so that we will get config
+    # changes even if the build did not change. This will be refactored when
+    # we move to a simpler data model. In fact this is the impotus to move to
+    # the simpler data model.
+
+    gc_repcons(
+        service_name,
+        branch_name,
+        environment_name,
+        commit_hash,
+        config_id,
+    )
+
     idem_post(
         "replicationcontrollers",
         k8s_repcon_description(
@@ -409,13 +429,7 @@ def update(param_set):
         )
     )
 
-    gc_repcons(
-        service_name,
-        branch_name,
-        environment_name,
-        commit_hash,
-        config_id,
-    )
+
 
 
 actions = {
