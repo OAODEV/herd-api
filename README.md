@@ -37,3 +37,10 @@ Create a secret from that pem and add it to the RepCon.
       secret:
         secretName: herd    
 
+# Using a herd-service with your project
+
+In order to use herd-service to deploy your project, you'll need to:
+ * [Dockerize your repo](https://github.com/OAODEV/herd-service/wiki/How-To-Dockerize-an-Application)
+ * [Set up CircleCi for use with herd-service](https://github.com/OAODEV/herd-service/wiki/Setup-Circle-CI-for-use-with-herd-service)
+
+The links above point to wiki pages which detail how to execute the necessary steps.
