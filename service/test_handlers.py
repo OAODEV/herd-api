@@ -3,8 +3,24 @@ from unittest.mock import patch
 
 from handlers import (
     handle_branch_commit,
-    handle_build,
+    handle_build as leg_handle_build,
 )
+
+from m2.handlers import (
+    handle_build,
+    save,
+)
+
+class M2HandlersTestCase(unittest.TestCase):
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_can_pass(self):
+        self.assertTrue(False)
 
 
 class HandlersTestCase(unittest.TestCase):
@@ -85,7 +101,7 @@ class HandlersTestCase(unittest.TestCase):
         mock_run = run_patcher.start()
 
         # run SUT
-        result = handle_build('mock-commit-hash', 'mock-image-name')
+        result = leg_handle_build('mock-commit-hash', 'mock-image-name')
 
         # confirm assumptions
         mock_get_iteration.assert_called_once_with(

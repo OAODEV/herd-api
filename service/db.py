@@ -19,8 +19,20 @@ class PoliteCursor(psycopg2.extensions.cursor):
         super().close()
         self.connection.commit()
 
-connection = None
-def get_cursor(connection=connection):
+
+def m2_get_cursor():
+    connection = psycopg2.connect(
+        # Model version 2 cursor is configured with dashes in keys
+        host=cfg(    'pg-host',     'herd-postgres'),
+        port=cfg(    'pg-port',     '5433'),
+        dbname=cfg(  'pg-database', 'herd'),
+        user=cfg(    'pg-user',     'herd_user'),
+        password=cfg('pg-password',  None),
+    )
+    return connection.cursor(cursor_factory=PoliteCursor)
+
+
+def get_cursor(connection=None):
     if connection is None:
         connection = psycopg2.connect(
             host=cfg('pghost', None),
@@ -30,3 +42,4 @@ def get_cursor(connection=connection):
             password=cfg('pgpassword', None),
         )
     return connection.cursor(cursor_factory=PoliteCursor)
+
