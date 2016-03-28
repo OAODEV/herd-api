@@ -1,3 +1,12 @@
+"""
+Canary functions will be replacing the functions imported from factories
+
+I'm taking this oportunity to rename these as they are not quite factories
+in the technical sense.
+
+"""
+import m2
+
 from factories import (
     idem_make_service,
     idem_make_feature,
@@ -30,6 +39,10 @@ def handle_branch_commit(repo_name,
 
     """
 
+    # canary call
+    m2.handle_branch_commit(repo_name, branch_name, commit_hash)
+
+    ### herd data model 1.0 path ####
     print(
         "handling branch commit ({}, {}, {}, {})".format(
             repo_name,
@@ -55,6 +68,10 @@ def handle_build(commit_hash, image_name):
 
     """
 
+    # canary call
+    m2.handle_build("branch_name", commit_hash, image_name)
+
+    # legacy path
     print("handling build ({}, {})".format(commit_hash, image_name,))
     iteration = get_iteration(commit_hash=commit_hash)
     set_iteration(iteration['iteration_id'], {'image_name': image_name})
