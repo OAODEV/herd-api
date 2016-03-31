@@ -142,6 +142,24 @@ class RunTests(unittest.TestCase):
             'data': {},
         })
 
+    def test_secret_description_handles_equals_sign_in_string(self):
+        """ a value that has an equals sign in it should not fail"""
+        # run SUT
+        secret = k8s_secret_description('key=value=morevalue', 123)
+
+        # confirm
+        self.assertEqual(secret, {
+            'kind': 'Secret',
+            'apiVersion': 'v1',
+            'metadata': {
+                'name': '{}-config-123' \
+                        .format(hashlib.sha256(b'key=value=morevalue')
+                                       .hexdigest()),
+            },
+            'data': {'key': base64.b64encode(b'value=morevalue')
+                                  .decode('utf-8')},
+        })
+
     @unittest.skip('skipping until settings are included in rc')
     def test_rc_description_handles_empty_env_settings_string(self):
         """
