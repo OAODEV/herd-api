@@ -151,7 +151,7 @@ def k8s_secret_description(key_value_pairs, config_id):
     data = {}
     for line in [l for l in key_value_pairs.strip().split('\n') if l]:
         try:
-            key, value = line.split('=')
+            key, value = line.split('=', 1)
         except Exception as e:
             print("Could not parse line {} in config {}".format(
                 line,
