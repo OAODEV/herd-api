@@ -1,8 +1,17 @@
 FROM us.gcr.io/lexical-cider-93918/basebottle:_build.0273acb
 MAINTAINER jesse.miller@adops.com
 
-# get swagger client
-RUN pip install requests
+RUN echo "@edge http://nl.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
+ && apk update \
+ && apk add --update \
+        postgresql@edge>=9.5 \
+        postgresql-contrib@edge>=9.5 \
+ && rm -rf /var/cache/apk/*
+
+RUN pip install \
+        hypothesis \
+        requests \
+        testing.postgresql
 
 # set up for configurability
 RUN mkdir /secret
@@ -10,6 +19,9 @@ RUN mkdir /secret
 # create a working directory
 RUN mkdir /herd
 WORKDIR /herd
+
+# make the postgres user own everything (so it can run the tests)
+RUN chown -R postgres /herd
 
 # add the api
 ADD service /herd/service

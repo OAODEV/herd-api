@@ -5,9 +5,10 @@ import psycopg2.extensions
 
 
 class PoliteCursor(psycopg2.extensions.cursor):
-    def execute(self, sql, args=None):
+    def execute(self, sql, args=None, print_sql=False):
         try:
-            print("executing sql ({}) with args ({})".format(sql, args))
+            if print_sql:
+                print("executing sql ({}) with args ({})".format(sql, args))
             psycopg2.extensions.cursor.execute(self, sql, args)
         except Exception as e:
             print("Error executing sql, {}".format(e))
