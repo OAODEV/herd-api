@@ -86,8 +86,8 @@ class M2HandlersIntegrationCase(unittest.TestCase):
         cursor.close()
 
     @given(
-        commit_hash=text(),
-        image_name=text()
+        commit_hash=text(max_size=99),
+        image_name=text(max_size=99)
     )
     @example(
         commit_hash='anything',
