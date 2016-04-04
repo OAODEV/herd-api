@@ -110,6 +110,8 @@ class M2HandlersIntegrationCase(unittest.TestCase):
         because this is what postgresql does.
 
         """
+        print(commit_hash)
+        print(image_name)
 
         cursor = get_cursor()
         service_id = save(
