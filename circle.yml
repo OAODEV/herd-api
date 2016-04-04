@@ -3,7 +3,7 @@ machine:
     - docker
   environment:
     herd_service_name: herd-service
-    herd_unittest_cmd: su postgres -c "python3 -m unittest discover"
+    herd_unittest_cmd: su postgres -c "python3 -m unittest"
     herd_build_tag: $(cat $CIRCLE_PROJECT_REPONAME/Version)_build.$(echo $CIRCLE_SHA1 | cut -c1-7)
 
     CLOUDSDK_CORE_DISABLE_PROMPTS: 1
@@ -24,6 +24,7 @@ dependencies:
 
     # build the image
     - echo $gcloud_key | base64 --decode > gcloud.json; gcloud auth activate-service-account $gcloud_email --key-file gcloud.json; ssh-keygen -f ~/.ssh/google_compute_engine -N ""
+    - gcloud docker pull us.gcr.io/lexical-cider-93918/bottlebase:2
     - if [[ -e ~/docker/image.tar ]]; then docker load -i ~/docker/image.tar; fi
     - docker build -t us.gcr.io/lexical-cider-93918/$herd_service_name:$herd_build_tag .
 
