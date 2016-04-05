@@ -3,7 +3,7 @@ machine:
     - docker
   environment:
     herd_service_name: herd-service
-    herd_unittest_cmd: su postgres -c nosetests
+    herd_unittest_cmd: su postgres -c python -- -m unittest discover
     herd_build_tag: $(cat $CIRCLE_PROJECT_REPONAME/Version)_build.$(echo $CIRCLE_SHA1 | cut -c1-7)
 
     CLOUDSDK_CORE_DISABLE_PROMPTS: 1

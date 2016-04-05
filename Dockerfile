@@ -10,7 +10,6 @@ RUN echo "@edge http://nl.alpinelinux.org/alpine/edge/main" >> /etc/apk/reposito
 
 RUN pip install \
         hypothesis \
-        nose \
         requests \
         testing.postgresql
 
