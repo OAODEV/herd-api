@@ -110,10 +110,10 @@ class M2HandlersIntegrationCase(unittest.TestCase):
         because this is what postgresql does.
 
         """
-        print(commit_hash)
-        print(image_name)
 
+        # set up
         cursor = get_cursor()
+        # save a service so we can have a branch
         service_id = save(
             cursor,
             'service',          # table name
@@ -121,6 +121,8 @@ class M2HandlersIntegrationCase(unittest.TestCase):
             ['service_name'],   # all columns
             ['mock_service'],   # values to insert
         )
+        # save a branch so we have a stable branch id to save
+        # iterations against
         branch_id = save(
             cursor,
             'branch',                        # table name
@@ -130,10 +132,16 @@ class M2HandlersIntegrationCase(unittest.TestCase):
         )
 
         """
-        If someone tries to save a build name to a branch-commit pair that
+        If someone tries to save a build name to a branch, commit pair that
         exists the existing build name will be used and the new build name
         being saved will be ignored.
         """
+        # because this test is run many times with random data we need
+        # to handle two cases. One when we have a branch, commit pair
+        # that we have not saved and one when we have saved that
+        # branch, commit pair
+
+        # check to see if we have this branch, commit pair saved
         cursor.execute(
             "select image_name\n" + \
             "  from iteration\n" + \
@@ -141,13 +149,19 @@ class M2HandlersIntegrationCase(unittest.TestCase):
             (commit_hash, branch_id),
         )
         result = cursor.fetchall()
+        # if we have it,
         if result:
+            # we should only have one
             self.assertEqual(len(result), 1)
+            # and we expect it to stay the same
             expected_image_name = result[0][0]
         else:
-            # only take what comes before a null character to match what
-            # postgresql does.
+            # otherwise we expect the new name (up to a null character) to be
+            # saved
             expected_image_name = image_name.split('\x00')[0]
+
+        # run SUT
+        # save an iteration twice
         iteration_id = save(
             cursor,
             'iteration',                                  # table name
@@ -162,6 +176,7 @@ class M2HandlersIntegrationCase(unittest.TestCase):
             ['commit_hash', 'branch_id', 'image_name'],   # all columns
             ( commit_hash ,  branch_id ,  image_name ),   # values to insert
         )
+        # also with a different image name
         iteration_id = save(
             cursor,
             'iteration',                                  # table name
@@ -171,6 +186,9 @@ class M2HandlersIntegrationCase(unittest.TestCase):
         )
         cursor.close()
         cursor = get_cursor()
+
+        # confirm assumptions
+        # dispite three saves and one having a different image name
         cursor.execute(
             "select commit_hash, branch_id, image_name\n" + \
             "  from iteration\n" + \
@@ -179,7 +197,9 @@ class M2HandlersIntegrationCase(unittest.TestCase):
         )
         results = cursor.fetchall()
         cursor.close()
+        # we should only have one result for this commit_hash
         self.assertEqual(len(results), 1)
+        # and it should be the image name we expect (not the most recent one)
         self.assertEqual(results[0][2], expected_image_name)
 
     @given(text())
@@ -187,7 +207,7 @@ class M2HandlersIntegrationCase(unittest.TestCase):
     @example(text='\'')
     def test_save_is_idempotent(self, text):
         """ when we save stuff more than once it should only get in once """
-        # save is idempotent
+        # run SUT
         cursor = get_cursor()
         service_id = save(
             cursor,
@@ -220,6 +240,8 @@ class M2HandlersIntegrationCase(unittest.TestCase):
             (text,),
         )
         second_result = cursor.fetchall()
+
+        # confirm that the second save did not change the result
         self.assertEqual(first_result, second_result)
 
     def test_save_inserts_new_data(self):

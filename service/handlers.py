@@ -1,12 +1,3 @@
-"""
-Canary functions will be replacing the functions imported from factories
-
-I'm taking this oportunity to rename these as they are not quite factories
-in the technical sense.
-
-"""
-import m2
-
 from factories import (
     idem_make_service,
     idem_make_feature,
