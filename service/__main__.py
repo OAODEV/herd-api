@@ -17,7 +17,7 @@ from security import restricted
 v1_build_path = "/v1/build/<service_name>/<branch_name>/<commit_hash>" + \
                          "/<image_name:re:[^\/]+\/?[^\/]+(\/?[^\/]+)?>"
 
-bottle.route(build_path, ["GET"], restricted(handle_build))
+bottle.route(v1_build_path, ["GET"], restricted(handle_build))
 
 ### legacy paths ###
 leg_commit_path = "/commit/<{}>/<{}>/<{}>/<{}>".format(
