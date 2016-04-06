@@ -36,7 +36,7 @@ def m2_get_cursor():
 def get_cursor(connection=None):
     if connection is None:
         connection = psycopg2.connect(
-            host=cfg('pghost', 'api-postgres'),
+            host=cfg('pghost', 'http://api-postgres'),
             port=cfg('pgport', '5433'),
             dbname=cfg('pgdatabase', 'herd'),
             user=cfg('pguser', None),
