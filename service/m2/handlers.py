@@ -62,7 +62,11 @@ def save(cursor, table, unique_columns, columns, values, returning=default):
     return return_value
 
 
-def handle_build(service_name, branch_name, commit_hash, image_name):
+def handle_build(service_name,
+                 branch_name,
+                 merge_base_commit_hash,
+                 commit_hash,
+                 image_name):
     """
     Save the data going into this build, then deploy the build
 
@@ -76,21 +80,21 @@ def handle_build(service_name, branch_name, commit_hash, image_name):
         cursor,
         'service',         # table name
         ['service_name'],  # unique columns
-        ['service_name'],  # all columns
-        ( service_name,),  # values to insert
+        ['service_name'],  # columns
+        ( service_name,),  # values
     )
     branch_id = save(
         cursor,
-        'branch',                         # table name
-        ['branch_name', 'service_id'],    # unique columns
-        ['branch_name', 'service_id'],    # all columns
-        ( branch_name ,  service_id ),    # values to insert
+        'branch',                                               # table name
+        ['branch_name', 'merge_base_commit_hash', 'deleted_dt'],# unique columns
+        ['branch_name', 'merge_base_commit_hash', 'service_id'], # columns
+        ( branch_name ,  merge_base_commit_hash , service_id ), # values
     )
     iteration_id = save(
         cursor,
         'iteration',                                  # table name
         ['commit_hash', 'branch_id'],                 # unique columns
-        ['commit_hash', 'branch_id', 'image_name'],   # all columns
-        ( commit_hash ,  branch_id ,  image_name ),   # values to insert
+        ['commit_hash', 'branch_id', 'image_name'],   # columns
+        ( commit_hash ,  branch_id ,  image_name ),   # values
     )
     cursor.close()

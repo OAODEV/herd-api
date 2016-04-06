@@ -25,7 +25,7 @@ from unittest.mock import patch
 def pg_init(pg):
     conn = psycopg2.connect(**pg.dsn())
     cursor = conn.cursor()
-    with open('service/schema.sql', 'r') as schema:
+    with open('service/schema-2.1.sql', 'r') as schema:
         cursor.execute(schema.read())
     conn.commit()
     cursor.close()
@@ -61,6 +61,7 @@ class M2HandlersIntegrationCase(unittest.TestCase):
         handle_build(
             'mock_service',
             'mock_branch',
+            'mock-merbe-base-ommitabc123',
             'mock_commitabc112',
             'us.gcr.io/mock-image:v0.1',
         )
@@ -125,10 +126,10 @@ class M2HandlersIntegrationCase(unittest.TestCase):
         # iterations against
         branch_id = save(
             cursor,
-            'branch',                        # table name
-            ['service_id', 'branch_name'],   # unique columns
-            ['service_id', 'branch_name'],   # all columns
-            [ service_id , 'mock_branch'],   # values to insert
+            'branch',                                               # table
+            ['branch_name', 'merge_base_commit_hash', 'deleted_dt'],# unique
+            ['branch_name', 'merge_base_commit_hash', 'service_id'],# columns
+            ['mock_branch', 'mock_base_commit_hash' ,  service_id ],# values
         )
 
         """
