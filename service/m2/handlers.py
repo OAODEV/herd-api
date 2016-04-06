@@ -48,7 +48,7 @@ def save(cursor, table, unique_columns, columns, values, returning=default):
 
     insert_fmt = "insert into {} ({})\n" + \
                  "     values ({})\n" + \
-                 "{}" + \  # may or may not have an on conflict do update clause
+                 "{}" + \
                  "  returning {}"
     query = insert_fmt.format(
         table,
