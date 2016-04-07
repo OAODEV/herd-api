@@ -16,11 +16,13 @@ def save(cursor, table, unique_columns, columns, values, returning=default):
     """
     Save some values to a table if they don't conflict.
 
-    return the id of the new row or the row that is already there. 
+    return the id of the new row or the row that is already there.
 
     """
 
     if returning == default:
+        # by default save returns the id for the table
+        # and assumes we are following OAO convention
         returning = '{}_id'.format(table)
     columns_str = ', '.join(columns)
     value_placeholders = ', '.join(['%s' for x in values])
@@ -85,10 +87,10 @@ def handle_build(service_name,
     )
     branch_id = save(
         cursor,
-        'branch',                                               # table name
-        ['branch_name', 'merge_base_commit_hash', 'deleted_dt'],# unique columns
+        'branch',                                                # table
+        ['branch_name', 'merge_base_commit_hash', 'deleted_dt'], # unique
         ['branch_name', 'merge_base_commit_hash', 'service_id'], # columns
-        ( branch_name ,  merge_base_commit_hash , service_id ), # values
+        ( branch_name ,  merge_base_commit_hash ,  service_id ), # values
     )
     iteration_id = save(
         cursor,
