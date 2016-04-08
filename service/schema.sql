@@ -3,8 +3,14 @@
 
 
 -- added by jesse.miller@adops.com
-CREATE EXTENSION hstore;
+-- modified by thomas.yager-madden@adops.com
 
+-- must be database superuser to CREATE EXTENSION;
+-- we should find some other way to do this — I suggest manually for now.
+-- CREATE EXTENSION hstore;
+
+-- wrap schema change in a transaction, so everything either works or fails atomically
+BEGIN;
 
 -- tables
 -- Table: branch
@@ -145,9 +151,8 @@ ALTER TABLE release ADD CONSTRAINT release_iteration
     INITIALLY IMMEDIATE
 ;
 
-
-
-
+-- commit our wrapper transaction
+COMMIT;
 
 
 -- End of file.
