@@ -49,11 +49,48 @@ CREATE TABLE release (
     iteration_id int  NOT NULL,
     config_id int  NOT NULL,
     created_dt timestamp  NOT NULL DEFAULT now(),
-    service_version_code int  NOT NULL,
-    branch_version_code int  NOT NULL,
+    service_version_seq int  NOT NULL,
+    branch_version_seq int  NOT NULL,
     CONSTRAINT release_pk PRIMARY KEY (release_id)
 );
 
+-- added by thomas.yager-madden@adops.com
+-- Trigger function on 'release'
+CREATE OR REPLACE FUNCTION increment_version() RETURNS TRIGGER AS $version$
+    DECLARE
+        service_seq integer;
+        branch_seq integer;
+    BEGIN
+        SELECT COALESCE(max(service_version_seq), 0)
+          FROM release
+          JOIN iteration USING (iteration_id)
+          JOIN branch USING (branch_id)
+          JOIN service USING (service_id)
+         WHERE iteration_id = NEW.iteration_id
+         GROUP BY service_id
+          INTO service_seq;
+
+        SELECT COALESCE(max(branch_version_seq), 0)
+          FROM release
+          JOIN iteration USING (iteration_id)
+          JOIN branch USING (branch_id)
+         WHERE iteration_id = NEW.iteration_id
+         GROUP BY branch_id
+          INTO branch_seq;
+
+        service_seq := service_seq + 1;
+        branch_seq := branch_seq + 1;
+
+        UPDATE release SET service_version_seq = service_seq
+                         , branch_version_seq = branch_seq
+         WHERE release_id = NEW.release_id;
+        return NEW;
+    END;
+$version$ LANGUAGE plpgsql;
+
+CREATE TRIGGER release_version_increment_trig
+AFTER INSERT ON release
+FOR EACH ROW EXECUTE PROCEDURE increment_version();
 
 
 -- Table: service
@@ -114,4 +151,3 @@ ALTER TABLE release ADD CONSTRAINT release_iteration
 
 
 -- End of file.
-
