@@ -55,8 +55,12 @@ class M2HandlersIntegrationCase(unittest.TestCase):
     def tearDown(self):
         self.pg.stop()
 
-    def test_handle_build(self):
-        """ handle branch should save the service, branch and iteration """
+    def test_handle_first_build(self):
+        """
+        On first build, save everything and releases with a null config
+
+        """
+
         # run SUT
         handle_build(
             'mock_service',
@@ -69,10 +73,16 @@ class M2HandlersIntegrationCase(unittest.TestCase):
         # confirm
         cursor = get_cursor()
         cursor.execute(
-            "select service_name, branch_name, commit_hash, image_name\n" + \
-            "  from service\n" + \
-            "  join branch using (service_id)\n" + \
-            "  join iteration using (branch_id)\n" + \
+            "select service_name "
+            "      ,branch_name "
+            "      ,commit_hash "
+            "      ,image_name"
+            "      ,key_value_pairs"
+            "  from service\n"
+            "  join branch using (service_id)\n"
+            "  join iteration using (branch_id)\n"
+            "  join release using (release_id)\n"
+            "  join config using (config_id)\n"
             " where image_name='us.gcr.io/mock-image:v0.1'"
         )
         results = cursor.fetchall()
@@ -82,9 +92,35 @@ class M2HandlersIntegrationCase(unittest.TestCase):
             ('mock_service',
              'mock_branch',
              'mock_commitabc112',
-             'us.gcr.io/mock-image:v0.1')
+             'us.gcr.io/mock-image:v0.1',
+             None)
         )
         cursor.close()
+
+    def test_releases_get_correct_qa_config(self):
+        """ handle_build uses the correct qa config for releases """
+        self.assertTrue(False)
+
+    def test_correct_qa_config(self):
+        """
+        The config for the automatic qa  release should be a copy of
+        one of the following.
+            1. The previous release of this branch if present.
+            2. The most recent release of the merge base iteration.
+            3. the null config otherwise.
+
+        """
+
+        # if there are no releases for this branch or merge base
+        # use the null config
+
+        # when there are releases for the merge base (but not the branch)
+        # use the most recent of them
+
+        # when there are releases for the branch, use the most recent of them
+
+        self.assertTrue(False)
+
 
     @given(
         commit_hash=text(max_size=99),

@@ -99,4 +99,5 @@ def handle_build(service_name,
         ['commit_hash', 'branch_id', 'image_name'],   # columns
         ( commit_hash ,  branch_id ,  image_name ),   # values
     )
+    config_id = correct_qa_config()
     cursor.close()
