@@ -1,7 +1,12 @@
 -- Created by Vertabelo (http://vertabelo.com)
 -- Last modification date: 2016-05-09 21:33:00.182
 
+-- must be database superuser to CREATE EXTENSION;
+-- we should find some other way to do this — I suggest manually for now.
 CREATE EXTENSION hstore;
+
+-- wrap schema change in a transaction, so everything either works or fails atomically
+BEGIN;
 
 -- tables
 -- Table: branch
@@ -96,34 +101,36 @@ CREATE TABLE service (
 -- Reference: branch_service (table: branch)
 ALTER TABLE branch ADD CONSTRAINT branch_service
     FOREIGN KEY (service_id)
-    REFERENCES service (service_id)  
-    NOT DEFERRABLE 
+    REFERENCES service (service_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: iteration_branch (table: iteration)
 ALTER TABLE iteration ADD CONSTRAINT iteration_branch
     FOREIGN KEY (branch_id)
-    REFERENCES branch (branch_id)  
-    NOT DEFERRABLE 
+    REFERENCES branch (branch_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: release_config (table: release)
 ALTER TABLE release ADD CONSTRAINT release_config
     FOREIGN KEY (config_id)
-    REFERENCES config (config_id)  
-    NOT DEFERRABLE 
+    REFERENCES config (config_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
 -- Reference: release_iteration (table: release)
 ALTER TABLE release ADD CONSTRAINT release_iteration
     FOREIGN KEY (iteration_id)
-    REFERENCES iteration (iteration_id)  
-    NOT DEFERRABLE 
+    REFERENCES iteration (iteration_id)
+    NOT DEFERRABLE
     INITIALLY IMMEDIATE
 ;
 
--- End of file.
+-- commit our wrapper transaction
+COMMIT;
 
+-- End of file.
