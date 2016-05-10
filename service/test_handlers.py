@@ -21,11 +21,10 @@ import testing.postgresql
 import unittest
 from unittest.mock import patch
 
-
 def pg_init(pg):
     conn = psycopg2.connect(**pg.dsn())
     cursor = conn.cursor()
-    with open('service/schema-2.1.sql', 'r') as schema:
+    with open('service/schema-2.1.2.sql', 'r') as schema:
         cursor.execute(schema.read())
     conn.commit()
     cursor.close()
@@ -46,81 +45,199 @@ def tearDownModule():
 class M2HandlersIntegrationCase(unittest.TestCase):
 
     def setUp(self):
+        """
+        Test that the correct config is released with new builds
+
+        start the test with this context
+        [service] --> [build/mergeBase] -> [commit/image] <-- [config time]
+
+         /----> [m/mb]-----> [mb/i0] <-- [I => 0 t-1]
+        /
+        [s]---> [b/mb]-----> [c/i]   <-- [A => a t0]
+         \            \----> [c2/i2] <-- [B => b t1]
+           \--> [b2/c2]----> [c3/i3] <-- [C => c t2]
+
+        confirm that when [s] -> [b/mb] -> [c4/i4] is added,
+        it's released with [B => b]
+
+        and that when [s] -> [b2/m2] -> [c5/i5] is added,
+        it's released with [C => c]
+
+        and that when [s] -> [b3/c] -> [c6/i6] is added,
+        it's released with [A => a]
+
+        and that when [sx] -> [bx/mx] -> [cx/ix] is added,
+        it's released with ['']
+
+        """
+
         self.pg = Postgresql()
         os.environ['pg-host'] = self.pg.dsn()['host']
         os.environ['pg-port'] = str(self.pg.dsn()['port'])
         os.environ['pg-database'] = self.pg.dsn()['database']
         os.environ['pg-user'] = self.pg.dsn()['user']
 
+#        self.mock_config_id = 123
+#        self.query(
+#            """
+#            insert into config (config_id, key_value_pairs)
+#                 values (%s, hstore(''))
+#            """,
+#            (self.mock_config_id,),
+#        )
+
+        # set up a few builds for context
+        previous_builds = [
+            # an initial build
+            ('s', 'm' , 'mb', 'mb', 'i0'),
+            # one with that as a merge base
+            ('s', 'b' , 'mb', 'c' , 'i'),
+            # another build on the same branch
+            ('s', 'b' , 'mb', 'c2', 'i2'),
+            # a third on a different branch
+            ('s', 'b2', 'c2', 'c3', 'i3'),
+        ]
+        for args in previous_builds:
+            handle_build(*args)
+
+        # differentiate the releases for all three builds
+        # by differentiating the configs they are released with
+        for pair, image_name in zip(["I => 0", "A => a", "B => b", "C => c"],
+                                    [x[-1] for x in previous_builds]):
+            # make a unique config
+            response = self.query(
+                """
+                insert into config (key_value_pairs)
+                     values (%s)
+                  returning config_id
+                """,
+                (pair,),
+            )
+            config_id = response[0][0]
+
+            # update the release for this build with that config
+            self.query(
+                """
+                  with the_iteration as (
+                       select iteration_id from iteration where image_name=%s
+                  )
+                update release set (config_id) = (%s)
+                 where iteration_id=(select iteration_id from the_iteration)
+                """,
+                (image_name, config_id),
+            )
+
     def tearDown(self):
         self.pg.stop()
 
-    def test_handle_first_build(self):
-        """
-        On first build, save everything and releases with a null config
-
-        """
-
-        # run SUT
-        handle_build(
-            'mock_service',
-            'mock_branch',
-            'mock-merbe-base-ommitabc123',
-            'mock_commitabc112',
-            'us.gcr.io/mock-image:v0.1',
-        )
-
-        # confirm
-        cursor = get_cursor()
-        cursor.execute(
-            "select service_name "
-            "      ,branch_name "
-            "      ,commit_hash "
-            "      ,image_name"
-            "      ,key_value_pairs"
-            "  from service\n"
-            "  join branch using (service_id)\n"
-            "  join iteration using (branch_id)\n"
-            "  join release using (release_id)\n"
-            "  join config using (config_id)\n"
-            " where image_name='us.gcr.io/mock-image:v0.1'"
-        )
-        results = cursor.fetchall()
-        self.assertEqual(len(results), 1)
-        self.assertEqual(
-            results[0],
-            ('mock_service',
-             'mock_branch',
-             'mock_commitabc112',
-             'us.gcr.io/mock-image:v0.1',
-             None)
-        )
+    def query(self, sql, values):
+        """ execute a query and return the results """
+        conn = psycopg2.connect(**self.pg.dsn())
+        cursor = conn.cursor()
+        cursor.execute(sql, values)
+        try:
+            results = cursor.fetchall()
+        except:
+            results = []
+        conn.commit()
         cursor.close()
+        conn.close()
+        return results
 
-    def test_releases_get_correct_qa_config(self):
-        """ handle_build uses the correct qa config for releases """
-        self.assertTrue(False)
-
-    def test_correct_qa_config(self):
+    def test_correct_qa_config_default_case(self):
         """
-        The config for the automatic qa  release should be a copy of
-        one of the following.
-            1. The previous release of this branch if present.
-            2. The most recent release of the merge base iteration.
-            3. the null config otherwise.
+        When there is no config to release with (like for a new service)
+        release with the empty config.
 
         """
 
         # if there are no releases for this branch or merge base
         # use the null config
 
-        # when there are releases for the merge base (but not the branch)
-        # use the most recent of them
+        # run SUT
+        handle_build(
+            "mock_service_name",
+            "mock_branch_name",
+            "mock_merge_base_commit_hash",
+            "mock_commit_hash",
+            "mock_image_name",
+        )
 
-        # when there are releases for the branch, use the most recent of them
+        # confirm there is a release with the unit config (no keys or values)
+        selected = self.query(
+            """
+            select service_name
+                  ,branch_name
+                  ,image_name
+                  ,key_value_pairs
+              from release
+              join config using (config_id)
+              join iteration using (iteration_id)
+              join branch using (branch_id)
+              join service using (service_id)
+             where commit_hash=%s
+            """,
+            ("mock_commit_hash",),
+        )
 
-        self.assertTrue(False)
+        # confirm that what we put in is there and assoicated with an
+        # empty key value pair config
+        self.assertEqual(len(selected), 1)
+        self.assertEqual(
+            selected[0],
+            ("mock_service_name",
+             "mock_branch_name",
+             "mock_image_name",
+             ""),
+        )
 
+    def test_correct_qa_config_existing_branch(self):
+        """
+        When handling a build for a known branch, release with most recent
+        config on that branch
+
+        """
+
+        # run SUT
+        handle_build('s', 'b', 'mb', 'c4', 'i4')
+        # existing objects [s]->[b/mb]->[c2/i2]<-[B => b]
+        # so confirm c4/i4 is released with 'B => b' too
+        result = self.query(
+            """
+            select key_value_pairs
+              from release
+              join iteration using (iteration_id)
+              join config using (config_id)
+             where commit_hash=%s
+            """,
+            ('c4',),
+        )
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0][0], '"B"=>"b"')
+
+    def test_correct_qa_config_new_branch_case(self):
+       """
+       When handling a new branch, release with the most recent config
+       associated with the merge base
+
+       """
+
+       # run SUT (new branch with existing merge base c)
+       handle_build('s', 'b3', 'c', 'c6', 'i6')
+       # the merge base c is released with A => a
+       # so confirm that c6 is too
+       result = self.query(
+           """
+           select key_value_pairs
+             from release
+             join iteration using (iteration_id)
+             join config using (config_id)
+            where commit_hash=%s
+           """,
+           ('c6',),
+       )
+       self.assertEqual(len(result), 1)
+       self.assertEqual(result[0][0], '"A"=>"a"')
 
     @given(
         commit_hash=text(max_size=99),
@@ -156,7 +273,7 @@ class M2HandlersIntegrationCase(unittest.TestCase):
             'service',          # table name
             ['service_name'],   # unique columns
             ['service_name'],   # all columns
-            ['mock_service'],   # values to insert
+            ('mock_service',),   # values to insert
         )
         # save a branch so we have a stable branch id to save
         # iterations against
@@ -165,7 +282,7 @@ class M2HandlersIntegrationCase(unittest.TestCase):
             'branch',                                               # table
             ['branch_name', 'merge_base_commit_hash', 'deleted_dt'],# unique
             ['branch_name', 'merge_base_commit_hash', 'service_id'],# columns
-            ['mock_branch', 'mock_base_commit_hash' ,  service_id ],# values
+            ('mock_branch', 'mock_base_commit_hash' ,  service_id ),# values
         )
 
         """
