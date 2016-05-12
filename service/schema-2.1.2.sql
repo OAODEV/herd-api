@@ -1,9 +1,5 @@
 -- Created by Vertabelo (http://vertabelo.com)
--- Last modification date: 2016-04-01 17:50:23.624
-
-
--- added by jesse.miller@adops.com
--- modified by thomas.yager-madden@adops.com
+-- Last modification date: 2016-05-09 21:33:00.182
 
 -- must be database superuser to CREATE EXTENSION;
 -- we should find some other way to do this — I suggest manually for now.
@@ -18,12 +14,12 @@ CREATE TABLE branch (
     branch_id serial  NOT NULL,
     service_id int  NOT NULL,
     branch_name varchar(100)  NOT NULL,
+    merge_base_commit_hash varchar(100)  NOT NULL,
     created_dt timestamp  NOT NULL DEFAULT now(),
-    CONSTRAINT branch_name_service_id UNIQUE (branch_name, service_id) NOT DEFERRABLE  INITIALLY IMMEDIATE,
+    deleted_dt timestamp  NOT NULL DEFAULT 'infinity',
+    CONSTRAINT branch_name_merge_base_deleted_dt UNIQUE (branch_name, merge_base_commit_hash, deleted_dt) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT branch_pk PRIMARY KEY (branch_id)
 );
-
-
 
 -- Table: config
 CREATE TABLE config (
@@ -33,8 +29,6 @@ CREATE TABLE config (
     CONSTRAINT key_value_pairs UNIQUE (key_value_pairs) NOT DEFERRABLE  INITIALLY IMMEDIATE,
     CONSTRAINT config_pk PRIMARY KEY (config_id)
 );
-
-
 
 -- Table: iteration
 CREATE TABLE iteration (
@@ -47,57 +41,52 @@ CREATE TABLE iteration (
     CONSTRAINT iteration_pk PRIMARY KEY (iteration_id)
 );
 
-
-
 -- Table: release
 CREATE TABLE release (
     release_id serial  NOT NULL,
     iteration_id int  NOT NULL,
     config_id int  NOT NULL,
     created_dt timestamp  NOT NULL DEFAULT now(),
-    service_version_seq int  NOT NULL,
-    branch_version_seq int  NOT NULL,
+    service_version_seq int  NOT NULL DEFAULT 0,
+    branch_version_seq int  NOT NULL DEFAULT 0,
     CONSTRAINT release_pk PRIMARY KEY (release_id)
 );
 
--- added by thomas.yager-madden@adops.com
--- Trigger function on 'release'
-CREATE OR REPLACE FUNCTION increment_version() RETURNS TRIGGER AS $version$
-    DECLARE
+create or replace function increment_version() returns trigger as $version$
+    declare
         service_seq integer;
         branch_seq integer;
-    BEGIN
-        SELECT COALESCE(max(service_version_seq), 0)
-          FROM release
-          JOIN iteration USING (iteration_id)
-          JOIN branch USING (branch_id)
-          JOIN service USING (service_id)
-         WHERE iteration_id = NEW.iteration_id
-         GROUP BY service_id
-          INTO service_seq;
+    begin
+        select coalesce(max(service_version_seq), 0)
+          from release
+          join iteration using (iteration_id)
+          join branch using (branch_id)
+          join service using (service_id)
+         where iteration_id = NEW.iteration_id
+         group by service_id
+          into service_seq;
 
-        SELECT COALESCE(max(branch_version_seq), 0)
-          FROM release
-          JOIN iteration USING (iteration_id)
-          JOIN branch USING (branch_id)
-         WHERE iteration_id = NEW.iteration_id
-         GROUP BY branch_id
-          INTO branch_seq;
+        select coalesce(max(branch_version_seq), 0)
+          from release
+          join iteration using (iteration_id)
+          join branch using (branch_id)
+         where iteration_id = NEW.iteration_id
+         group by branch_id
+          into branch_seq;
 
         service_seq := service_seq + 1;
         branch_seq := branch_seq + 1;
 
-        UPDATE release SET service_version_seq = service_seq
+        update release set service_version_seq = service_seq
                          , branch_version_seq = branch_seq
-         WHERE release_id = NEW.release_id;
+         where release_id = NEW.release_id;
         return NEW;
-    END;
-$version$ LANGUAGE plpgsql;
+    end;
+$version$ language plpgsql;
 
-CREATE TRIGGER release_version_increment_trig
-AFTER INSERT ON release
-FOR EACH ROW EXECUTE PROCEDURE increment_version();
-
+create trigger release_version_increment_trig
+after insert on release
+for each row execute procedure increment_version();;
 
 -- Table: service
 CREATE TABLE service (
@@ -108,15 +97,8 @@ CREATE TABLE service (
     CONSTRAINT service_pk PRIMARY KEY (service_id)
 );
 
-
-
-
-
-
-
 -- foreign keys
--- Reference:  branch_service (table: branch)
-
+-- Reference: branch_service (table: branch)
 ALTER TABLE branch ADD CONSTRAINT branch_service
     FOREIGN KEY (service_id)
     REFERENCES service (service_id)
@@ -124,8 +106,7 @@ ALTER TABLE branch ADD CONSTRAINT branch_service
     INITIALLY IMMEDIATE
 ;
 
--- Reference:  iteration_branch (table: iteration)
-
+-- Reference: iteration_branch (table: iteration)
 ALTER TABLE iteration ADD CONSTRAINT iteration_branch
     FOREIGN KEY (branch_id)
     REFERENCES branch (branch_id)
@@ -133,8 +114,7 @@ ALTER TABLE iteration ADD CONSTRAINT iteration_branch
     INITIALLY IMMEDIATE
 ;
 
--- Reference:  release_config (table: release)
-
+-- Reference: release_config (table: release)
 ALTER TABLE release ADD CONSTRAINT release_config
     FOREIGN KEY (config_id)
     REFERENCES config (config_id)
@@ -142,8 +122,7 @@ ALTER TABLE release ADD CONSTRAINT release_config
     INITIALLY IMMEDIATE
 ;
 
--- Reference:  release_iteration (table: release)
-
+-- Reference: release_iteration (table: release)
 ALTER TABLE release ADD CONSTRAINT release_iteration
     FOREIGN KEY (iteration_id)
     REFERENCES iteration (iteration_id)
@@ -153,6 +132,5 @@ ALTER TABLE release ADD CONSTRAINT release_iteration
 
 -- commit our wrapper transaction
 COMMIT;
-
 
 -- End of file.

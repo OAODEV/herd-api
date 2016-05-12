@@ -7,6 +7,7 @@ No need for the indirection inserted by the "factories" idea.
 """
 
 from db import m2_get_cursor as get_cursor
+from psycopg2.extras import register_hstore
 from uuid import uuid4
 
 
@@ -19,6 +20,13 @@ def save(cursor, table, unique_columns, columns, values, returning=default):
     return the id of the new row or the row that is already there.
 
     """
+
+    assert type(table) == str
+    assert type(unique_columns) == list
+    assert type(columns) == list
+    assert type(values) == tuple
+    if returning is not default:
+        assert type(returning) == str
 
     if returning == default:
         # by default save returns the id for the table
@@ -48,10 +56,10 @@ def save(cursor, table, unique_columns, columns, values, returning=default):
     else:
         conflict_clause = ""
 
-    insert_fmt = "insert into {} ({})\n" + \
-                 "     values ({})\n" + \
-                 "{}" + \
-                 "  returning {}"
+    insert_fmt = ("insert into {} ({})\n"
+                  "     values ({})\n"
+                  "{}"
+                  "  returning {}")
     query = insert_fmt.format(
         table,
         columns_str,
@@ -62,6 +70,37 @@ def save(cursor, table, unique_columns, columns, values, returning=default):
     cursor.execute(query, values)
     return_value = cursor.fetchone()[0]
     return return_value
+
+
+def correct_qa_config(cursor, branch_id, merge_base_commit_hash):
+    """ Return the config_id to release a new commit to this build with """
+    register_hstore(cursor)
+    # if there are releases on this branch, use the config from the most recent
+    # otherwise use the most recent release of the merge base commit
+    cursor.execute(
+        ("select config_id "
+         "  from release "
+         "  join iteration using (iteration_id) "
+         " where branch_id=%s "
+         "    or commit_hash=%s "
+         " order by iteration.created_dt desc, release.created_dt desc "
+         " limit 1 "),
+        (branch_id, merge_base_commit_hash),
+    )
+    results = cursor.fetchall()
+    if len(results) is 0:
+        config_id = save(
+            cursor,
+            'config',               # table
+            ['key_value_pairs'],    # unique columns
+            ['key_value_pairs'],    # column
+            ({},),                  # value
+        )
+    elif len(results) is 1:
+        config_id = results[0][0]
+    else:
+        raise ValueError("There should only be one correct config")
+    return config_id
 
 
 def handle_build(service_name,
@@ -98,5 +137,13 @@ def handle_build(service_name,
         ['commit_hash', 'branch_id'],                 # unique columns
         ['commit_hash', 'branch_id', 'image_name'],   # columns
         ( commit_hash ,  branch_id ,  image_name ),   # values
+    )
+    config_id = correct_qa_config(cursor, branch_id, merge_base_commit_hash)
+    release_id = save(
+        cursor,
+        'release',                           # table name
+        [],                                  # unique columns
+        ['iteration_id', 'config_id'],       # columns
+        ( iteration_id ,  config_id ),       # values
     )
     cursor.close()
