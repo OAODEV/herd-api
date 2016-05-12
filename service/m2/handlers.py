@@ -99,7 +99,7 @@ def correct_qa_config(cursor, branch_id, merge_base_commit_hash):
     elif len(results) is 1:
         config_id = results[0][0]
     else:
-        raise TypeError("There should only be one correct config")
+        raise ValueError("There should only be one correct config")
     return config_id
 
 

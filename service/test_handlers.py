@@ -60,9 +60,6 @@ class M2HandlersIntegrationCase(unittest.TestCase):
         confirm that when [s] -> [b/mb] -> [c4/i4] is added,
         it's released with [B => b]
 
-        and that when [s] -> [b2/m2] -> [c5/i5] is added,
-        it's released with [C => c]
-
         and that when [s] -> [b3/c] -> [c6/i6] is added,
         it's released with [A => a]
 
@@ -76,15 +73,6 @@ class M2HandlersIntegrationCase(unittest.TestCase):
         os.environ['pg-port'] = str(self.pg.dsn()['port'])
         os.environ['pg-database'] = self.pg.dsn()['database']
         os.environ['pg-user'] = self.pg.dsn()['user']
-
-#        self.mock_config_id = 123
-#        self.query(
-#            """
-#            insert into config (config_id, key_value_pairs)
-#                 values (%s, hstore(''))
-#            """,
-#            (self.mock_config_id,),
-#        )
 
         # set up a few builds for context
         previous_builds = [
