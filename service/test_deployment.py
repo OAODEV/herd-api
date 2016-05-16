@@ -26,6 +26,8 @@ class RunTests(unittest.TestCase):
         os.environ['kubeproxy'] = "mock8s-host"
         os.environ['k8spassword'] = "mock8s-admin-pass"
 
+        os.environ['v2_model'] = 'run'
+
         requests_patcher = patch("deployment.gce.requests")
         self.mock_requests = requests_patcher.start()
 
@@ -44,8 +46,21 @@ class RunTests(unittest.TestCase):
              "mock-key=mock-value\nmk=mv\n",
              "mock_env_name",
              "mockcommithash",
-             "mock_image_name",
-             "mock_settings",)]
+             "mock_image_name")]
+        )
+
+        # mock up m2 cursor to return the same as the m1 so we can confirm
+        # they are doing the same thing.
+        self.m2_get_cursor_patcher = patch("deployment.gce.m2_get_cursor")
+        self.m2_mock_get_cursor = self.m2_get_cursor_patcher.start()
+        self.m2_mock_get_cursor.return_value.fetchall.return_value = (
+            [("m2mock_service_name",
+              "m2mock_branch_name",
+              234, # mock config id
+              "m2mock-key=mock-value\nmk=mv\n",
+              "m2mock_env_name",
+              "m2mockcommithash",
+              "m2mock_image_name")]
         )
 
     def tearDown(self):
@@ -196,6 +211,9 @@ class RunTests(unittest.TestCase):
 
         It should also delete all other RepCons for that branch
 
+        During the refactor it should also be calling the version two
+        model's params
+
         """
 
         # run SUT
@@ -211,7 +229,6 @@ class RunTests(unittest.TestCase):
             "      ,environment_name\n" + \
             "      ,commit_hash\n" + \
             "      ,image_name\n" + \
-            "      ,settings\n" + \
             "  FROM release r\n" + \
             "  JOIN iteration i\n" + \
             "    ON i.iteration_id = r.iteration_id\n" + \
@@ -231,6 +248,27 @@ class RunTests(unittest.TestCase):
             " WHERE release_id = %s\n" + \
             "   AND infrastructure_backend = %s",
             (123, "gce"),
+        )
+
+        self.m2_mock_get_cursor.return_value.execute.assert_called_with(
+            ("select service_name\n"
+             "      ,branch_name\n"
+             "      ,c.config_id\n"
+             "      ,key_value_pairs\n"
+             "      ,environment_name\n"
+             "      ,commit_hash\n"
+             "      ,image_name\n"
+             "  from release r\n"
+             "  join iteration i\n"
+             "    on i.iteration_id = r.iteration_id\n"
+             "  join branch b\n"
+             "    on b.branch_id = i.branch_id\n"
+             "  join config c\n"
+             "    on c.config_id = r.config_id\n"
+             "  join service s\n"
+             "    on b.service_id\n"
+             " where release_id=%s"),
+            (123,),
         )
 
         # should have created a service in k8s
@@ -257,8 +295,35 @@ class RunTests(unittest.TestCase):
             auth=('admin', 'mock8s-admin-pass'),
         )
 
+        self.mock_requests.post.assert_any_call(
+            "http://mock8s-host/api/v1/namespaces/default/services",
+            json={
+                "kind": "Service",
+                "apiVersion": "v1",
+                "metadata": {
+                    "name": "m2mock-serv-m2mock-branc",
+                },
+                "spec": {
+                    "ports": [
+                    {
+                        "port": 8000,
+                    }
+                    ],
+                    "selector":{
+                        'service': 'm2mock-service-name-m2mock-branch-name',
+                    },
+            },
+            },
+            verify="/secret/k8s.pem",
+            auth=('admin', 'mock8s-admin-pass'),
+        )
+
         secret_name = "{}-config-789".format(
             hashlib.sha256(b'mock-key=mock-value\nmk=mv\n').hexdigest()
+        )
+
+        m2_secret_name = "{}-config-234".format(
+            hashlib.sha256(b'm2mock-key=mock-value\nmk=mv\n').hexdigest()
         )
 
         # should have created a secret in k8s
@@ -279,9 +344,29 @@ class RunTests(unittest.TestCase):
             auth=('admin', 'mock8s-admin-pass'),
         )
 
+        self.mock_requests.post.assert_any_call(
+            "http://mock8s-host/api/v1/namespaces/default/secrets",
+            json={
+                "kind": "Secret",
+                "apiVersion": "v1",
+                "metadata": {
+                    "name": m2_secret_name,
+                },
+                "data": {
+                    "m2mock-key": base64.b64encode(b'mock-value').decode('utf-8'),
+                    "mk": base64.b64encode(b'mv').decode('utf-8'),
+                }
+            },
+            verify="/secret/k8s.pem",
+            auth=('admin', 'mock8s-admin-pass'),
+        )
+
         # should have created a replication controller in k8s
         repcon_name = "mock-branch-name-mock-env-name-mockcom-789"
         service_identity = "mock-service-name-mock-branch-name"
+
+        m2_repcon_name = "m2mock-branch-name-m2mock-env-name-m2mockc-234"
+        m2_service_identity = "m2mock-service-name-m2mock-branch-name"
 
         self.mock_requests.post.assert_any_call(
             "http://mock8s-host/api/v1/namespaces/default/" + \
@@ -326,6 +411,63 @@ class RunTests(unittest.TestCase):
                                     "volumeMounts": [
                                         {
                                             "name": repcon_name + "-secret",
+                                            "readOnly": True,
+                                            "mountPath": "/secret"
+                                        }
+                                    ],
+                                },
+                            ],
+                        },
+                    },
+                },
+            },
+            verify="/secret/k8s.pem",
+            auth=('admin', 'mock8s-admin-pass'),
+        )
+
+        self.mock_requests.post.assert_any_call(
+            "http://mock8s-host/api/v1/namespaces/default/" + \
+                "replicationcontrollers",
+            json={
+                "kind": "ReplicationController",
+                "apiVersion": "v1",
+                "metadata": {
+                    "name": m2_repcon_name,
+                    "labels": {
+                        "name": m2_repcon_name,
+                        "service": m2_service_identity,
+                    },
+                },
+                "spec": {
+                    "replicas": 1,
+                    "selector": {
+                        "name": m2_repcon_name,
+                    },
+                    "template": {
+                        "metadata": {
+                            "labels": {
+                                "name": m2_repcon_name,
+                            },
+                        },
+                        "spec": {
+                            "volumes": [{
+                                "name": m2_repcon_name + "-secret",
+                                "secret": {
+                                    "secretName": m2_secret_name,
+                                },
+                            }],
+                            "containers": [
+                                {
+                                    "name": m2_service_identity,
+                                    "image": "m2mock_image_name",
+                                    "ports": [
+                                        {
+                                            "containerPort": 8000,
+                                        }
+                                    ],
+                                    "volumeMounts": [
+                                        {
+                                            "name": m2_repcon_name + "-secret",
                                             "readOnly": True,
                                             "mountPath": "/secret"
                                         }

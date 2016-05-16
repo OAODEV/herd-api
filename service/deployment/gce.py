@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import os
 import re
 import requests
 import pprint
@@ -9,7 +10,7 @@ import time
 from functools import singledispatch
 from config_finder import cfg
 
-from db import get_cursor
+from db import get_cursor, m2_get_cursor
 
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -65,36 +66,68 @@ def _(s):
 def _(b):
     return hashlib.sha256(b).hexdigest()
 
+def m2_run_params(release_id):
+    """
+    return the paramaters needed for a run on gce from version 2 of the model
+
+    """
+
+    cursor = m2_get_cursor()
+    cursor.execute(
+        ("select service_name\n"
+         "      ,branch_name\n"
+         "      ,c.config_id\n"
+         "      ,key_value_pairs\n"
+         "      ,environment_name\n"
+         "      ,commit_hash\n"
+         "      ,image_name\n"
+         "  from release r\n"
+         "  join iteration i\n"
+         "    on i.iteration_id = r.iteration_id\n"
+         "  join branch b\n"
+         "    on b.branch_id = i.branch_id\n"
+         "  join config c\n"
+         "    on c.config_id = r.config_id\n"
+         "  join service s\n"
+         "    on b.service_id\n"
+         " where release_id=%s"),
+        (release_id,),
+    )
+    result = cursor.fetchall()
+    cursor.close()
+    return result
+
+
+
 def run_params(release_id):
     """ return the paramaters needed for a run on gce """
     cursor = get_cursor()
     cursor.execute(
-        "SELECT service_name\n" + \
-        "      ,branch_name\n" + \
-        "      ,c.config_id\n" + \
-        "      ,key_value_pairs\n" + \
-        "      ,environment_name\n" + \
-        "      ,commit_hash\n" + \
-        "      ,image_name\n" + \
-        "      ,settings\n" + \
-        "  FROM release r\n" + \
-        "  JOIN iteration i\n" + \
-        "    ON i.iteration_id = r.iteration_id\n" + \
-        "  JOIN branch b\n" + \
-        "    ON b.branch_id = i.branch_id\n" + \
-        "  JOIN deployment_pipeline d\n" + \
-        "    ON b.branch_id = d.branch_id\n" + \
-        "   AND d.deployment_pipeline_id = r.deployment_pipeline_id\n" + \
-        "  JOIN config c\n" + \
-        "    ON c.config_id = d.config_id\n" + \
-        "  JOIN environment e\n" + \
-        "    ON e.environment_id = d.environment_id\n" + \
-        "  JOIN feature f\n" + \
-        "    ON f.feature_id = b.feature_id\n" + \
-        "  JOIN service s\n" + \
-        "    ON s.service_id = f.service_id\n" + \
-        " WHERE release_id = %s\n" + \
-        "   AND infrastructure_backend = %s",
+        ("SELECT service_name\n"
+         "      ,branch_name\n"
+         "      ,c.config_id\n"
+         "      ,key_value_pairs\n"
+         "      ,environment_name\n"
+         "      ,commit_hash\n"
+         "      ,image_name\n"
+         "  FROM release r\n"
+         "  JOIN iteration i\n"
+         "    ON i.iteration_id = r.iteration_id\n"
+         "  JOIN branch b\n"
+         "    ON b.branch_id = i.branch_id\n"
+         "  JOIN deployment_pipeline d\n"
+         "    ON b.branch_id = d.branch_id\n"
+         "   AND d.deployment_pipeline_id = r.deployment_pipeline_id\n"
+         "  JOIN config c\n"
+         "    ON c.config_id = d.config_id\n"
+         "  JOIN environment e\n"
+         "    ON e.environment_id = d.environment_id\n"
+         "  JOIN feature f\n"
+         "    ON f.feature_id = b.feature_id\n"
+         "  JOIN service s\n"
+         "    ON s.service_id = f.service_id\n"
+         " WHERE release_id = %s\n"
+         "   AND infrastructure_backend = %s"),
         (release_id, "gce"),
     )
     result = cursor.fetchall()
@@ -210,7 +243,6 @@ def k8s_repcon_description(service_name,
                            environment_name,
                            commit_hash,
                            image_name,
-                           settings,
                            key_value_pairs,
 ):
     """ return the k8s replication controller description """
@@ -292,16 +324,18 @@ def k8s_endpoint(resource):
 def idem_post(resource, description):
     """ idempotently post a resource to k8s """
     endpoint = k8s_endpoint(resource)
-    print("posting {} request".format(endpoint))
+    print("posting {} request with description:".format(endpoint))
     pp.pprint(description)
+    print()
+    print()
+
     response = requests.post(
         endpoint,
         json=description,
         verify="/secret/k8s.pem",
         auth=('admin', cfg("k8spassword")),
     )
-    print("return:")
-    pp.pprint(response.text)
+
     return response
 
 
@@ -385,8 +419,7 @@ def update(param_set):
      key_value_pairs,
      environment_name,
      commit_hash,
-     image_name,
-     settings) = param_set
+     image_name) = param_set
 
     # k8s expects names to be valid urls so we need to replace '_' with '-'
     service_name = service_name.replace('_', '-')
@@ -424,12 +457,9 @@ def update(param_set):
             environment_name,
             commit_hash,
             image_name,
-            settings,
             key_value_pairs,
         )
     )
-
-
 
 
 actions = {
@@ -441,5 +471,10 @@ def runner(run_request):
     """ carry out the run request """
     for param_set in run_params(run_request['release_id']):
         actions[run_request['action']](param_set)
+
+    # calculate the canary run request
+    if os.environ['v2_model'] == 'run':
+        for param_set in m2_run_params(run_request['release_id']):
+            actions[run_request['action']](param_set)
 
     return True
