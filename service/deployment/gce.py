@@ -324,11 +324,6 @@ def k8s_endpoint(resource):
 def idem_post(resource, description):
     """ idempotently post a resource to k8s """
     endpoint = k8s_endpoint(resource)
-    print("posting {} request with description:".format(endpoint))
-    pp.pprint(description)
-    print()
-    print()
-
     response = requests.post(
         endpoint,
         json=description,
