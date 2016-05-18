@@ -44,7 +44,6 @@ class RunTests(unittest.TestCase):
              "mock_branch_name",
              789, # mock config id
              "mock-key=mock-value\nmk=mv\n",
-             "mock_env_name",
              "mockcommithash",
              "mock_image_name")]
         )
@@ -58,7 +57,6 @@ class RunTests(unittest.TestCase):
               "m2mock_branch_name",
               234, # mock config id
               "m2mock-key=mock-value\nmk=mv\n",
-              "m2mock_env_name",
               "m2mockcommithash",
               "m2mock_image_name")]
         )
@@ -88,7 +86,7 @@ class RunTests(unittest.TestCase):
                     'metadata': {
                         'name': make_rc_name(
                             'mock_branch_name',
-                            'mock_environment_name',
+                            'mock_service_name',
                             'mock_commit_hash',
                             'mock_config_id'
                         ),
@@ -104,7 +102,6 @@ class RunTests(unittest.TestCase):
         gc_repcons(
             'mock_service_name',
             'mock_branch_name',
-            'mock_environment_name',
             'mock_commit_hash',
             'mock_config_id',
         )
@@ -226,7 +223,6 @@ class RunTests(unittest.TestCase):
             "      ,branch_name\n" + \
             "      ,c.config_id\n" + \
             "      ,key_value_pairs\n" + \
-            "      ,environment_name\n" + \
             "      ,commit_hash\n" + \
             "      ,image_name\n" + \
             "  FROM release r\n" + \
@@ -255,7 +251,6 @@ class RunTests(unittest.TestCase):
              "      ,branch_name\n"
              "      ,c.config_id\n"
              "      ,key_value_pairs\n"
-             "      ,environment_name\n"
              "      ,commit_hash\n"
              "      ,image_name\n"
              "  from release r\n"
@@ -362,10 +357,10 @@ class RunTests(unittest.TestCase):
         )
 
         # should have created a replication controller in k8s
-        repcon_name = "mock-branch-name-mock-env-name-mockcom-789"
+        repcon_name = "mock-branch-name-mock-service-name-mockcom-789"
         service_identity = "mock-service-name-mock-branch-name"
 
-        m2_repcon_name = "m2mock-branch-name-m2mock-env-name-m2mockc-234"
+        m2_repcon_name = "m2mock-branch-name-m2mock-service-name-m2mockc-234"
         m2_service_identity = "m2mock-service-name-m2mock-branch-name"
 
         self.mock_requests.post.assert_any_call(
