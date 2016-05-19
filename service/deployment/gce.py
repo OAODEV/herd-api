@@ -78,7 +78,6 @@ def m2_run_params(release_id):
          "      ,branch_name\n"
          "      ,c.config_id\n"
          "      ,key_value_pairs\n"
-         "      ,environment_name\n"
          "      ,commit_hash\n"
          "      ,image_name\n"
          "  from release r\n"
@@ -107,7 +106,6 @@ def run_params(release_id):
          "      ,branch_name\n"
          "      ,c.config_id\n"
          "      ,key_value_pairs\n"
-         "      ,environment_name\n"
          "      ,commit_hash\n"
          "      ,image_name\n"
          "  FROM release r\n"
@@ -203,7 +201,7 @@ def k8s_secret_description(key_value_pairs, config_id):
     }
 
 
-def make_rc_name(branch_name, environment_name, commit_hash, config_id):
+def make_rc_name(branch_name, service_name, commit_hash, config_id):
     """
     make a replication controller name suitable for k8s labels
     must have at most 63 characters,
@@ -214,7 +212,7 @@ def make_rc_name(branch_name, environment_name, commit_hash, config_id):
     # limit the string to 63 characters
     name = "{}-{}-{}-{}".format(    #  4 dashes
         branch_name[:27],           # 27 branch name
-        environment_name[:20],      # 20 environment name
+        service_name[:20],      # 20 environment name
         commit_hash[:7],            #  7 commit hash
         config_id,                  #  5 left for config id
     )
@@ -228,7 +226,7 @@ def make_rc_name(branch_name, environment_name, commit_hash, config_id):
         raise NameError(
             "cannot make good k8s name from {}".format([
                 branch_name,
-                environment_name,
+                service_name,
                 commit_hash,
                 config_id,
             ])
@@ -240,7 +238,6 @@ def make_rc_name(branch_name, environment_name, commit_hash, config_id):
 def k8s_repcon_description(service_name,
                            branch_name,
                            config_id,
-                           environment_name,
                            commit_hash,
                            image_name,
                            key_value_pairs,
@@ -248,7 +245,7 @@ def k8s_repcon_description(service_name,
     """ return the k8s replication controller description """
     rc_name = make_rc_name(
         branch_name,
-        environment_name,
+        service_name,
         commit_hash,
         config_id
     )
@@ -360,7 +357,6 @@ def sync_scale(uri, scale_to, timeout=30):
 
 def gc_repcons(service_name,
                branch_name,
-               environment_name,
                commit_hash,
                config_id):
     """ delete all other repcons for this branch of this service """
@@ -368,7 +364,7 @@ def gc_repcons(service_name,
     # the repcon should be labeled with service=this_service_label
     rc_name = make_rc_name(
         branch_name,
-        environment_name,
+        service_name,
         commit_hash,
         config_id,
     )
@@ -384,7 +380,7 @@ def gc_repcons(service_name,
     # normally we would exclude the current repcon name, except that
     # we want to start fresh and update in case there is new config.
 
-    # we are deleting all repcons for this branch in order to get settings updates
+    # we are deleting all repcons for this branch in order to get settings updated
     # until we refactor to the simpler data model.
     for item in response.json()['items']:
 
@@ -412,14 +408,12 @@ def update(param_set):
      branch_name,
      config_id,
      key_value_pairs,
-     environment_name,
      commit_hash,
      image_name) = param_set
 
     # k8s expects names to be valid urls so we need to replace '_' with '-'
     service_name = service_name.replace('_', '-')
     branch_name = branch_name.replace('_', '-')
-    environment_name = str(environment_name).replace('_', '-')
 
     print("updating {}".format(param_set))
 
@@ -438,7 +432,6 @@ def update(param_set):
     gc_repcons(
         service_name,
         branch_name,
-        environment_name,
         commit_hash,
         config_id,
     )
@@ -449,7 +442,6 @@ def update(param_set):
             service_name,
             branch_name,
             config_id,
-            environment_name,
             commit_hash,
             image_name,
             key_value_pairs,
