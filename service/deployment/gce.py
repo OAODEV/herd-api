@@ -259,7 +259,8 @@ def k8s_repcon_description(service_name,
             "name": rc_name,
             "labels": {
                 "name": rc_name,
-                "service": service_label,
+                "service": service_name,
+                "branch": branch_name
             },
         },
         "spec": {
@@ -271,6 +272,8 @@ def k8s_repcon_description(service_name,
                 "metadata": {
                     "labels": {
                         "name": rc_name,
+                        "service": service_name,
+                        "branch": branch_name,
                     },
                 },
                 "spec": {
@@ -368,7 +371,7 @@ def gc_repcons(service_name,
         commit_hash,
         config_id,
     )
-    selector = "service={}".format(service_identity(service_name, branch_name))
+    selector = "service={},branch={}".format(service_name, branch_name)
     response = requests.get(
         k8s_endpoint("replicationcontrollers"),
         params={

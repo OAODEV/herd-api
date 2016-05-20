@@ -111,7 +111,8 @@ class RunTests(unittest.TestCase):
         self.mock_requests.get.assert_any_call(
             "http://mock8s-host/api/v1/namespaces/default/replicationcontrollers",
             params={
-                "labelSelector": "service=mock_service_name-mock_branch_name",
+                "labelSelector": ("service=mock_service_name,"
+                                  "branch=mock_branch_name"),
             },
         )
 
@@ -373,7 +374,8 @@ class RunTests(unittest.TestCase):
                     "name": repcon_name,
                     "labels": {
                         "name": repcon_name,
-                        "service": service_identity,
+                        "service": 'mock-service-name',
+                        "branch": 'mock-branch-name',
                     },
                 },
                 "spec": {
@@ -385,6 +387,8 @@ class RunTests(unittest.TestCase):
                         "metadata": {
                             "labels": {
                                 "name": repcon_name,
+                                "branch": "mock-branch-name",
+                                "service": "mock-service-name",
                             },
                         },
                         "spec": {
@@ -430,7 +434,8 @@ class RunTests(unittest.TestCase):
                     "name": m2_repcon_name,
                     "labels": {
                         "name": m2_repcon_name,
-                        "service": m2_service_identity,
+                        "service": "m2mock-service-name",
+                        "branch": "m2mock-branch-name",
                     },
                 },
                 "spec": {
@@ -442,6 +447,8 @@ class RunTests(unittest.TestCase):
                         "metadata": {
                             "labels": {
                                 "name": m2_repcon_name,
+                                "branch": "m2mock-branch-name",
+                                "service": "m2mock-service-name",
                             },
                         },
                         "spec": {
