@@ -283,7 +283,8 @@ class RunTests(unittest.TestCase):
                         }
                     ],
                     "selector":{
-                        'service': 'mock-service-name-mock-branch-name',
+                        "branch": "mock-branch-name",
+                        "service": "mock-service-name",
                     },
                 },
             },
@@ -306,7 +307,8 @@ class RunTests(unittest.TestCase):
                     }
                     ],
                     "selector":{
-                        'service': 'm2mock-service-name-m2mock-branch-name',
+                        'service': 'm2mock-service-name',
+                        'branch': 'm2mock-branch-name',
                     },
             },
             },
