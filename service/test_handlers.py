@@ -132,6 +132,13 @@ class M2HandlersIntegrationCase(unittest.TestCase):
         conn.close()
         return results
 
+    def test_github_delete_interface(self):
+        """ accept github's webhook delete message format """
+        self.assertTrue(False)
+
+    def test_delete_branch_handler():
+        """ should update the correct branch with a deleted datetime """
+
     def test_correct_qa_config_default_case(self):
         """
         When there is no config to release with (like for a new service)
