@@ -132,13 +132,6 @@ class M2HandlersIntegrationCase(unittest.TestCase):
         conn.close()
         return results
 
-    def test_github_delete_interface(self):
-        """ accept github's webhook delete message format """
-        self.assertTrue(False)
-
-    def test_delete_branch_handler():
-        """ should update the correct branch with a deleted datetime """
-
     def test_correct_qa_config_default_case(self):
         """
         When there is no config to release with (like for a new service)
@@ -494,13 +487,13 @@ class HandlersTestCase(unittest.TestCase):
         )
         release_in_auto_pipes_patcher = patch(
             "handlers.idem_release_in_automatic_pipelines",
-            return_value=12345,
+            return_value=[12345],
         )
-        run_patcher = patch("handlers.run")
+        runner_patcher = patch("handlers.runner")
         mock_get_iteration = get_iteration_patcher.start()
         mock_set_iteration = set_iteration_patcher.start()
         mock_release_in_auto_pipes = release_in_auto_pipes_patcher.start()
-        mock_run = run_patcher.start()
+        mock_runner = runner_patcher.start()
 
         # run SUT
         result = leg_handle_build('mock-commit-hash', 'mock-image-name')
@@ -516,7 +509,9 @@ class HandlersTestCase(unittest.TestCase):
         mock_release_in_auto_pipes.assert_called_once_with(
             'mock-iteration-id',
         )
-        mock_run.assert_called_once_with(12345)
+        mock_runner.assert_called_once_with(
+            {"release_id": 12345, "action": "UPDATE"}
+        )
 
     def test_can_pass(self):
         self.assertTrue(True)

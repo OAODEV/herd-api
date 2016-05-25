@@ -213,7 +213,7 @@ def make_rc_name(branch_name, service_name, commit_hash, config_id):
     # limit the string to 63 characters
     name = "{}-{}-{}-{}".format(    #  4 dashes
         branch_name[:27],           # 27 branch name
-        service_name[:20],      # 20 environment name
+        service_name[:20],          # 20 service name
         commit_hash[:7],            #  7 commit hash
         config_id,                  #  5 left for config id
     )
