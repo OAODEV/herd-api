@@ -13,10 +13,6 @@ from deployment.gce import (
     make_rc_name,
     watch_uri
 )
-from deployment import (
-    actions,
-    run,
-)
 
 
 class RunTests(unittest.TestCase):
@@ -31,12 +27,6 @@ class RunTests(unittest.TestCase):
         requests_patcher = patch("deployment.gce.requests")
         self.mock_requests = requests_patcher.start()
 
-        self.mock_runner = MagicMock()
-        all_patcher = patch(
-            'deployment.runners.runners.all',
-            return_value=[self.mock_runner],
-        )
-        all_patcher.start()
         self.get_cursor_patcher = patch("deployment.gce.get_cursor")
         self.mock_get_cursor = self.get_cursor_patcher.start()
         self.mock_get_cursor.return_value.fetchall.return_value = (
@@ -173,18 +163,6 @@ class RunTests(unittest.TestCase):
                                   .decode('utf-8')},
         })
 
-    @unittest.skip('skipping until settings are included in rc')
-    def test_rc_description_handles_empty_env_settings_string(self):
-        """
-        creating an rc with an environment witn no settings should not fail
-
-        """
-
-        # run SUT
-        rc = k8s_repcon_description('s', 'b', 123, 'e', 'c', 'i', '')
-
-        # confirm
-
     def test_watch_uri(self):
         """ given a k8s resource uri, return a watch uri for that resource """
         self.assertEqual(
@@ -215,7 +193,7 @@ class RunTests(unittest.TestCase):
         """
 
         # run SUT
-        gce_runner({'release_id': 123, 'action': actions.UPDATE})
+        gce_runner({'release_id': 123, 'action': "UPDATE"})
 
         # we should have grabbed the info for a service, secret and repcon from
         # the database
@@ -488,57 +466,6 @@ class RunTests(unittest.TestCase):
 
         # make sure we closed the cursor
         self.mock_get_cursor.return_value.close.asert_called_once_with()
-
-    def test_run(self):
-        """
-        Make a run request(s) from a pipeline(s), give it to a runner
-
-        Each pipeline will specify an environment with an infrastructure.
-        run shouild give the run request to the runnder for that infrastructure.
-
-        """
-
-        # run SUT
-        run(123)
-
-        # we should have passed a good run request to the runner
-        self.mock_runner.assert_called_once_with(
-            {'release_id': 123, 'action': actions.UPDATE}
-        )
-
-        # should fail on dictionaries
-        with self.assertRaises(TypeError):
-            run({'1', 2})
-
-        # should work on lists
-        run([456, 789])
-
-        self.mock_runner.assert_any_call(
-            {'release_id': 456, 'action': actions.UPDATE},
-        )
-        self.mock_runner.assert_any_call(
-            {'release_id': 789, 'action': actions.UPDATE},
-        )
-
-        # whould work on tuples of lists of strings
-        run((1, [2,3], ['4', '567']))
-
-        self.mock_runner.assert_any_call(
-            {'release_id': 1, 'action': actions.UPDATE},
-        )
-        self.mock_runner.assert_any_call(
-            {'release_id': 2, 'action': actions.UPDATE},
-        )
-        self.mock_runner.assert_any_call(
-            {'release_id': 3, 'action': actions.UPDATE},
-        )
-        self.mock_runner.assert_any_call(
-            {'release_id': 4, 'action': actions.UPDATE},
-        )
-        self.mock_runner.assert_any_call(
-            {'release_id': 567, 'action': actions.UPDATE},
-        )
-
 
     def test_can_pass(self):
         self.assertTrue(True)

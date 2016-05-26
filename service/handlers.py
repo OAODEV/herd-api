@@ -9,7 +9,7 @@ from factories import (
 from getters import get_iteration
 from setters import set_iteration
 
-from deployment import run
+from deployment.gce import runner
 
 from bottle import (
     request,
@@ -60,5 +60,6 @@ def handle_build(commit_hash, image_name):
     set_iteration(iteration['iteration_id'], {'image_name': image_name})
     releases = idem_release_in_automatic_pipelines(iteration['iteration_id'])
     print("running releases {}".format(releases))
-    run(releases)
+    for release in releases:
+        runner({"release_id": release, "action": "UPDATE"})
     return {'iteration_id': iteration['iteration_id']}
